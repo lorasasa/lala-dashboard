@@ -158,6 +158,13 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
 }
 
 </style>
+
+<meta name="theme-color" content="#fffaf2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="LaLa">
+<link rel="manifest" href="./manifest.json">
+
 </head>
 <body>
 <div class="app">
@@ -750,5 +757,14 @@ document.querySelectorAll('.mobile-nav').forEach(btn=>{
 });
 
 </script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+
 </body>
 </html>

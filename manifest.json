@@ -1,0 +1,10 @@
+{
+  "name": "LaLa Life Dashboard",
+  "short_name": "LaLa",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fffaf2",
+  "theme_color": "#fffaf2",
+  "description": "LaLa Life Dashboard"
+}
