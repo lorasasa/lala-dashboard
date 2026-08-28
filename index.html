@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LaLa Life Dashboard</title>
+<style>
+:root{--bg:#fffaf2;--side:#fff2d9;--card:#fff;--line:#eee4d7;--text:#392d25;--muted:#8c7a6d}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;background:var(--bg);color:var(--text)}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.side{background:linear-gradient(#fff4df,#fff0d2);padding:24px 18px;display:flex;flex-direction:column}
+.pet{height:145px;border-radius:22px;display:grid;place-items:center;font-size:54px}
+.brand{text-align:center;font-size:22px;font-weight:800;margin:4px 0 30px}
+.nav{display:grid;gap:12px}
+.nav button{border:0;background:transparent;padding:14px 16px;border-radius:16px;text-align:left;font-size:16px;color:var(--text);cursor:pointer}
+.nav button.active{background:#fff;box-shadow:0 3px 10px #0000000d}
+.foot{margin-top:auto;font-size:12px;color:var(--muted);text-align:center;padding-top:25px}
+.main{padding:24px 28px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.hello{font-size:28px;font-weight:850}
+.today-date{font-size:20px;font-weight:800;margin-top:7px;color:#6f5b4e;line-height:1.4}
+.quick{border:0;border-radius:999px;background:#ffe8eb;color:#c93650;padding:11px 18px;font-weight:800;cursor:pointer}
+.home{display:grid;grid-template-columns:minmax(560px,1.55fr) minmax(360px,.9fr);gap:18px}
+.left,.right{display:grid;gap:18px;align-content:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 3px 12px #7a60430d}
+.title{font-size:18px;font-weight:800;margin-bottom:14px}
+.trip{min-height:230px;position:relative;overflow:hidden}
+.trip .days{font-size:64px;font-weight:900;color:#ff416c;line-height:1}
+.trip .days span:last-child{font-size:17px;color:var(--muted);font-weight:600}
+.trip-art{position:absolute;right:20px;bottom:18px;font-size:72px}
+.datein{margin-top:28px}
+.datein input{border:1px solid var(--line);padding:9px 12px;border-radius:10px}
+.cal{min-height:520px}
+.calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.calhead button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:6px 10px;cursor:pointer}
+.week,.grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.week div{text-align:center;padding:8px;font-weight:700}
+.grid{border-top:1px solid var(--line)}
+.day{min-height:76px;border-bottom:1px solid #f3ece4;padding:8px;position:relative}
+.day.sun{color:red}.day.sat{color:#2563eb}
+.day.today b{background:#ff6688;color:#fff;border-radius:50%;display:inline-grid;place-items:center;width:28px;height:28px}
+.event{font-size:11px;border-radius:7px;padding:4px;margin-top:4px;background:#ffe2e8;color:#9f2943;cursor:grab}
+.list{display:grid;gap:0}
+.row{display:flex;gap:10px;align-items:center;padding:11px 0;border-top:1px solid #f0e8de}
+.row:first-child{border-top:0}
+.tag{font-size:12px;padding:4px 9px;border-radius:999px;background:#fff0c9}
+.grow{flex:1}.muted{color:var(--muted);font-size:12px}
+.todo-card{min-height:420px}
+.todo-group{padding:11px 0;border-top:1px solid #f0e8de}
+.todo-group:first-child{border-top:0}
+.todo-group-title{font-size:14px;font-weight:800;margin-bottom:8px}
+.todo-item{display:flex;align-items:flex-start;gap:9px;padding:7px 0;font-size:14px}
+.todo-item input{margin-top:3px}
+.idea li{margin:10px 0}
+.modal{display:none;position:fixed;inset:0;background:#0004;align-items:center;justify-content:center;z-index:20}
+.modal.show{display:flex}
+.box{width:min(440px,90vw);background:#fff;border-radius:20px;padding:22px}
+.box input,.box select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;margin:7px 0}
+.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.actions button{padding:9px 14px;border:0;border-radius:10px;cursor:pointer}
+.save-btn{background:#ff6b86;color:#fff}
+@media(max-width:1050px){.app{grid-template-columns:170px 1fr}.home{grid-template-columns:1fr}.cal{min-height:auto}}
+@media(max-width:700px){.app{display:block}.side{display:none}.main{padding:16px}.hello{font-size:22px}.today-date{font-size:17px}.day{min-height:58px}}
+
+.view{display:none}.view.active{display:block}
+.full-calendar-card{min-height:720px}
+.full-calendar-card .day{min-height:112px}
+.calendar-page-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.calendar-page-title{font-size:26px;font-weight:850}
+.back-home{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 14px;cursor:pointer}
+@media(max-width:700px){.full-calendar-card .day{min-height:72px}}
+
+.todo-page-wrap{display:grid;gap:18px}
+.todo-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.todo-filter{display:flex;gap:8px;flex-wrap:wrap}
+.todo-filter button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;cursor:pointer}
+.todo-filter button.active{background:#ffe8eb;color:#c93650;border-color:#ffd2da;font-weight:800}
+.todo-board{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:16px}
+.todo-section{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px}
+.todo-section-title{font-size:17px;font-weight:850;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.todo-count{font-size:12px;color:var(--muted);font-weight:600}
+.todo-task{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;padding:11px 0;border-top:1px solid #f0e8de}
+.todo-task:first-of-type{border-top:0}
+.todo-task.done .todo-task-name{text-decoration:line-through;color:var(--muted)}
+.todo-task-main{min-width:0}
+.todo-task-name{font-size:14px;font-weight:650}
+.todo-task-meta{font-size:12px;color:var(--muted);margin-top:4px}
+.todo-delete{border:0;background:transparent;color:#c7b1a3;cursor:pointer;font-size:16px}
+.todo-empty{color:var(--muted);font-size:13px;padding:12px 0}
+@media(max-width:900px){.todo-board{grid-template-columns:1fr}}
+
+
+.idea-page-wrap{display:grid;gap:18px}
+.idea-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.idea-board{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:16px}
+.idea-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;min-height:150px;display:flex;flex-direction:column;gap:10px}
+.idea-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.idea-badge{font-size:12px;padding:4px 9px;border-radius:999px;background:#fff0c9}
+.idea-text{font-size:15px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.idea-meta{font-size:12px;color:var(--muted);margin-top:auto}
+.idea-actions{display:flex;gap:8px}
+.idea-actions button{border:0;background:transparent;cursor:pointer;color:#b39a8c}
+.idea-empty{background:#fff;border:1px dashed var(--line);border-radius:18px;padding:28px;text-align:center;color:var(--muted)}
+@media(max-width:1050px){.idea-board{grid-template-columns:repeat(2,minmax(220px,1fr))}}
+@media(max-width:700px){.idea-board{grid-template-columns:1fr}}
+
+
+/* ===== v2.2.1 mobile layout - stable JS preserved ===== */
+.mobile-bottom-nav{display:none}
+@media(max-width:700px){
+  body{padding-bottom:82px}
+  .app{display:block;min-height:100vh}
+  .side{display:none}
+  .main{padding:16px 14px 28px}
+  .top{align-items:flex-start;gap:10px;margin-bottom:16px}
+  .hello{font-size:23px;line-height:1.25}
+  .today-date{font-size:16px;margin-top:5px}
+  .quick{padding:10px 12px;font-size:13px;white-space:nowrap}
+  .home{display:block}
+  .left,.right{display:grid;gap:14px}
+  .right{margin-top:14px}
+  .card{padding:14px;border-radius:17px}
+  .trip{min-height:190px}
+  .trip .days{font-size:48px}
+  .trip-art{font-size:52px;right:12px;bottom:16px}
+  .cal{min-height:0;overflow:hidden}
+  .calhead{gap:6px}
+  .calhead button{padding:6px 7px;font-size:12px}
+  .week div{padding:6px 1px;font-size:12px}
+  .day{min-height:64px;padding:5px 3px;font-size:12px;overflow:hidden}
+  .day.today b{width:24px;height:24px}
+  .event{font-size:9px;padding:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .todo-card{min-height:0}
+  .todo-board,.idea-board{grid-template-columns:1fr}
+  .calendar-page-toolbar,.todo-toolbar,.idea-toolbar{align-items:flex-start}
+  .calendar-page-title{font-size:23px}
+  .full-calendar-card{min-height:0;padding:12px}
+  .full-calendar-card .day{min-height:76px}
+  .box{width:calc(100vw - 28px);max-height:86vh;overflow:auto}
+  .box input,.box select,.box textarea{font-size:16px}
+  .mobile-bottom-nav{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;
+    display:grid;grid-template-columns:repeat(4,1fr);
+    background:rgba(255,250,242,.97);
+    border-top:1px solid var(--line);
+    padding:7px 5px calc(7px + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 18px #4d38230d;
+    backdrop-filter:blur(10px)
+  }
+  .mobile-bottom-nav button{
+    border:0;background:transparent;color:var(--muted);
+    padding:5px 2px;font-size:10px;
+    display:flex;flex-direction:column;align-items:center;gap:3px
+  }
+  .mobile-bottom-nav .mi{font-size:21px;line-height:1}
+  .mobile-bottom-nav button.active{color:#c93650;font-weight:800}
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+  <div class="pet">📷</div>
+  <div class="brand">LaLa 的工作台</div>
+  <nav class="nav">
+    <button class="nav-view active" data-view="home">🏠　首頁</button>
+    <button class="nav-view" data-view="calendar-page">📅　行事曆</button>
+    <button class="nav-view" data-view="todo-page">✅　待辦清單</button>
+    <button class="nav-view" data-view="ideas-page">💡　腦海中的小靈感</button>
+  </nav>
+  <div class="foot">💗 好好生活，慢慢實現 ✨</div>
+</aside>
+
+<main class="main">
+<div id="home" class="view active">
+  <header class="top">
+    <div>
+      <div class="hello" id="hello">午安，LaLa ☀️</div>
+      <div class="today-date" id="today"></div>
+    </div>
+    <button class="quick" id="quick">＋ 快速新增行程</button>
+  </header>
+
+  <section class="home">
+    <div class="left">
+      <div class="card trip">
+        <div class="title">🇯🇵 東京旅行倒數</div>
+        <div class="days"><span id="days">--</span> <span>DAYS TO GO</span></div>
+        <div class="datein"><span class="muted">出發日　</span><input type="date" id="tripDate"></div>
+        <div class="trip-art">🗼🌸</div>
+      </div>
+
+      <div class="card cal">
+        <div class="calhead">
+          <div class="title" id="monthTitle" style="margin:0"></div>
+          <div><button id="prev">←</button> <button id="now">今天</button> <button id="next">→</button></div>
+        </div>
+        <div class="week"><div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div></div>
+        <div class="grid" id="calendar"></div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="card">
+        <div class="title">📅 近三日的行程</div>
+        <div class="list" id="near"></div>
+      </div>
+
+      <div class="card todo-card">
+        <div class="title">✅ 待辦事項</div>
+        <div id="todos"></div>
+      </div>
+
+      <div class="card">
+        <div class="title">💡 生活中的小靈感</div>
+        <div id="homeIdeas"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="calendar-page" class="view">
+  <div class="calendar-page-toolbar">
+    <div>
+      <div class="calendar-page-title">📅 行事曆</div>
+      <div class="today-date" id="calendarPageToday"></div>
+    </div>
+    <button class="quick" id="calendarQuick">＋ 快速新增行程</button>
+  </div>
+  <div class="card full-calendar-card">
+    <div class="calhead">
+      <div class="title" id="fullMonthTitle" style="margin:0"></div>
+      <div><button id="fullPrev">←</button> <button id="fullNow">今天</button> <button id="fullNext">→</button></div>
+    </div>
+    <div class="week"><div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div></div>
+    <div class="grid" id="fullCalendar"></div>
+  </div>
+</div>
+
+<div id="todo-page" class="view">
+  <div class="todo-page-wrap">
+    <div class="todo-toolbar">
+      <div>
+        <div class="calendar-page-title">✅ 待辦清單</div>
+        <div class="today-date" id="todoPageToday"></div>
+      </div>
+      <button class="quick" id="todoQuick">＋ 新增待辦</button>
+    </div>
+    <div class="todo-filter" id="todoFilters">
+      <button class="active" data-filter="all">全部</button>
+      <button data-filter="孩子">👦 孩子</button>
+      <button data-filter="工作">💼 工作</button>
+      <button data-filter="家庭">🏠 家庭</button>
+      <button data-filter="個人">👤 個人</button>
+    </div>
+    <div class="todo-board" id="todoBoard"></div>
+  </div>
+</div>
+
+<div id="ideas-page" class="view">
+  <div class="idea-page-wrap">
+    <div class="idea-toolbar">
+      <div>
+        <div class="calendar-page-title">💡 腦海中的小靈感</div>
+        <div class="today-date" id="ideasPageToday"></div>
+      </div>
+      <button class="quick" id="ideaQuick">＋ 新增靈感</button>
+    </div>
+    <div class="idea-board" id="ideaBoard"></div>
+  </div>
+</div>
+</main>
+</div>
+
+
+
+
+<nav class="mobile-bottom-nav" aria-label="手機導覽">
+  <button class="mobile-nav active" data-view="home"><span class="mi">🏠</span><span>首頁</span></button>
+  <button class="mobile-nav" data-view="calendar-page"><span class="mi">📅</span><span>行事曆</span></button>
+  <button class="mobile-nav" data-view="todo-page"><span class="mi">✅</span><span>待辦</span></button>
+  <button class="mobile-nav" data-view="ideas-page"><span class="mi">💡</span><span>小靈感</span></button>
+</nav>
+
+<div class="modal" id="ideaModal">
+  <div class="box">
+    <div class="title">💡 新增小靈感</div>
+    <select id="ideaCategory">
+      <option value="生活">🌿 生活</option>
+      <option value="孩子">👦 孩子</option>
+      <option value="工作">💼 工作</option>
+      <option value="旅行">✈️ 旅行</option>
+      <option value="其他">✨ 其他</option>
+    </select>
+    <textarea id="ideaText" placeholder="把剛剛想到的事情記下來…" style="width:100%;min-height:140px;padding:11px;border:1px solid var(--line);border-radius:10px;margin:7px 0;font:inherit;resize:vertical"></textarea>
+    <div class="actions">
+      <button id="ideaCancel">取消</button>
+      <button class="save-btn" id="ideaSave">新增</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="todoModal">
+  <div class="box">
+    <div class="title">✅ 新增待辦</div>
+    <input id="todoName" placeholder="待辦事項">
+    <select id="todoCategory">
+      <option value="孩子">👦 孩子</option>
+      <option value="工作">💼 工作</option>
+      <option value="家庭">🏠 家庭</option>
+      <option value="個人">👤 個人</option>
+    </select>
+    <input id="todoDue" type="date">
+    <input id="todoNote" placeholder="備註（可留白）">
+    <div class="actions">
+      <button id="todoCancel">取消</button>
+      <button class="save-btn" id="todoSave">新增</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="box">
+    <div class="title">➕ 快速新增行程</div>
+    <input id="ename" placeholder="行程內容">
+    <select id="ecat">
+      <option>一般</option><option>工作</option><option>孩子</option><option>家庭</option><option>旅遊</option>
+    </select>
+    <input id="edate" type="date">
+    <div class="actions">
+      <button id="cancel">取消</button>
+      <button class="save-btn" id="saveEvent">新增</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const KEY='lala_dashboard_v1_events';
+let events=JSON.parse(localStorage.getItem(KEY)||'[]');
+const TODO_KEY='lala_dashboard_v1_todos';
+let todoItems=JSON.parse(localStorage.getItem(TODO_KEY)||'[]');
+let todoFilter='all';
+const IDEA_KEY='lala_dashboard_v1_ideas';
+let ideaItems=JSON.parse(localStorage.getItem(IDEA_KEY)||'[]');
+let view=new Date(); view.setDate(1);
+
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const ds=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+function persistEvents(){
+  localStorage.setItem(KEY,JSON.stringify(events));
+}
+function greeting(){
+  const h=new Date().getHours();
+  if(h<12) return {text:'早安', icon:'☀️'};
+  if(h<18) return {text:'午安', icon:'🌤️'};
+  return {text:'晚安', icon:'🌙'};
+}
+function renderHeader(){
+  const n=new Date();
+  const g=greeting();
+  $('hello').textContent=`${g.text}，LaLa ${g.icon}`;
+  $('today').textContent=`${n.getFullYear()} 年 ${n.getMonth()+1} 月 ${n.getDate()} 日`;
+}
+function renderCountdown(){
+  const saved=localStorage.getItem('lala_trip')||'2026-11-17';
+  $('tripDate').value=saved;
+  const a=new Date(); a.setHours(0,0,0,0);
+  const b=new Date(saved+'T00:00:00');
+  $('days').textContent=Math.max(0,Math.ceil((b-a)/86400000));
+}
+function renderCalendar(){
+  const calendar=$('calendar');
+  calendar.innerHTML='';
+  const y=view.getFullYear(),m=view.getMonth();
+  $('monthTitle').textContent=`📅 ${y} 年 ${m+1} 月`;
+
+  const first=new Date(y,m,1).getDay();
+  const last=new Date(y,m+1,0).getDate();
+  const prevLast=new Date(y,m,0).getDate();
+
+  for(let i=0;i<42;i++){
+    let d=i-first+1,cur,dim=false;
+    if(d<1){cur=new Date(y,m-1,prevLast+d);dim=true}
+    else if(d>last){cur=new Date(y,m+1,d-last);dim=true}
+    else cur=new Date(y,m,d);
+
+    const key=ds(cur);
+    const el=document.createElement('div');
+    el.className='day '+(cur.getDay()===0?'sun ':'')+(cur.getDay()===6?'sat ':'')+(key===ds(new Date())?'today ':'');
+    el.style.opacity=dim?'.35':'1';
+    el.innerHTML=`<b>${cur.getDate()}</b>`;
+
+    events.filter(e=>e.date===key).forEach(e=>{
+      const item=document.createElement('div');
+      item.className='event';
+      item.textContent=e.name;
+      item.draggable=true;
+      item.ondragstart=ev=>ev.dataTransfer.setData('text/plain',e.id);
+      el.appendChild(item);
+    });
+
+    el.ondragover=e=>e.preventDefault();
+    el.ondrop=e=>{
+      const id=e.dataTransfer.getData('text/plain');
+      const item=events.find(x=>x.id===id);
+      if(item){item.date=key;persistEvents();renderAll()}
+    };
+    calendar.appendChild(el);
+  }
+}
+function renderSide(){
+  const now=new Date();
+  const start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const end=new Date(start); end.setDate(end.getDate()+2);
+
+  const nearEvents=events.filter(e=>{
+    const d=new Date(e.date+'T00:00:00');
+    return d>=start&&d<=end;
+  }).sort((a,b)=>a.date.localeCompare(b.date));
+
+  $('near').innerHTML=nearEvents.length
+    ? nearEvents.map(e=>`<div class="row"><span class="tag">${e.category}</span><span class="grow">${e.name}</span><span class="muted">${e.date.slice(5)}</span></div>`).join('')
+    : '<div class="muted">近三日沒有行程</div>';
+
+  const summaryGroups=[
+    ['孩子','👦 孩子'],['工作','💼 工作'],['家庭','🏠 家庭'],['個人','👤 個人']
+  ];
+  $('todos').innerHTML=summaryGroups.map(([key,label])=>{
+    const items=todoItems.filter(t=>t.category===key && !t.done).slice(0,3);
+    return `<div class="todo-group">
+      <div class="todo-group-title">${label}</div>
+      ${items.length
+        ? items.map(t=>`<label class="todo-item"><input class="home-todo-check" data-id="${t.id}" type="checkbox"><span>${escapeHtml(t.name)}</span></label>`).join('')
+        : '<div class="muted">目前沒有待辦</div>'}
+    </div>`;
+  }).join('');
+
+  $('todos').querySelectorAll('.home-todo-check').forEach(cb=>{
+    cb.onchange=()=>{
+      const item=todoItems.find(t=>t.id===cb.dataset.id);
+      if(item){item.done=true;persistTodos();renderSide();renderTodoPage();}
+    };
+  });
+}
+
+function renderFullCalendar(){
+  const calendar=$('fullCalendar');
+  if(!calendar)return;
+  calendar.innerHTML='';
+  const y=view.getFullYear(),m=view.getMonth();
+  $('fullMonthTitle').textContent=`📅 ${y} 年 ${m+1} 月`;
+  const n=new Date();
+  $('calendarPageToday').textContent=`${n.getFullYear()} 年 ${n.getMonth()+1} 月 ${n.getDate()} 日`;
+
+  const first=new Date(y,m,1).getDay();
+  const last=new Date(y,m+1,0).getDate();
+  const prevLast=new Date(y,m,0).getDate();
+
+  for(let i=0;i<42;i++){
+    let d=i-first+1,cur,dim=false;
+    if(d<1){cur=new Date(y,m-1,prevLast+d);dim=true}
+    else if(d>last){cur=new Date(y,m+1,d-last);dim=true}
+    else cur=new Date(y,m,d);
+    const key=ds(cur);
+    const el=document.createElement('div');
+    el.className='day '+(cur.getDay()===0?'sun ':'')+(cur.getDay()===6?'sat ':'')+(key===ds(new Date())?'today ':'');
+    el.style.opacity=dim?'.35':'1';
+    el.innerHTML=`<b>${cur.getDate()}</b>`;
+    events.filter(e=>e.date===key).forEach(e=>{
+      const item=document.createElement('div');
+      item.className='event';
+      item.textContent=`${e.category}｜${e.name}`;
+      item.draggable=true;
+      item.ondragstart=ev=>ev.dataTransfer.setData('text/plain',e.id);
+      el.appendChild(item);
+    });
+    el.ondragover=e=>e.preventDefault();
+    el.ondrop=e=>{
+      const id=e.dataTransfer.getData('text/plain');
+      const item=events.find(x=>x.id===id);
+      if(item){item.date=key;persistEvents();renderAll()}
+    };
+    calendar.appendChild(el);
+  }
+}
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));
+  document.querySelectorAll('.nav-view').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
+  if(id==='calendar-page')renderFullCalendar();
+  renderTodoPage();
+  renderIdeasPage();
+  renderHomeIdeas();
+}
+document.querySelectorAll('.nav-view').forEach(btn=>{
+  btn.onclick=()=>showView(btn.dataset.view);
+});
+
+
+function persistTodos(){
+  localStorage.setItem(TODO_KEY,JSON.stringify(todoItems));
+}
+function renderTodoPage(){
+  const board=$('todoBoard');
+  if(!board)return;
+
+  const n=new Date();
+  const dateEl=$('todoPageToday');
+  if(dateEl)dateEl.textContent=`${n.getFullYear()} 年 ${n.getMonth()+1} 月 ${n.getDate()} 日`;
+
+  const groups=[
+    ['孩子','👦 孩子'],
+    ['工作','💼 工作'],
+    ['家庭','🏠 家庭'],
+    ['個人','👤 個人']
+  ];
+
+  const visibleGroups=todoFilter==='all'?groups:groups.filter(([key])=>key===todoFilter);
+
+  board.innerHTML=visibleGroups.map(([key,label])=>{
+    const items=todoItems
+      .filter(t=>t.category===key)
+      .sort((a,b)=>{
+        if(a.done!==b.done)return a.done?1:-1;
+        if(!a.dueDate && !b.dueDate)return 0;
+        if(!a.dueDate)return 1;
+        if(!b.dueDate)return -1;
+        return a.dueDate.localeCompare(b.dueDate);
+      });
+
+    const rows=items.length?items.map(t=>`
+      <div class="todo-task ${t.done?'done':''}" data-id="${t.id}">
+        <input class="todo-check" type="checkbox" ${t.done?'checked':''}>
+        <div class="todo-task-main">
+          <div class="todo-task-name">${escapeHtml(t.name)}</div>
+          <div class="todo-task-meta">
+            ${t.dueDate?`📅 ${t.dueDate}`:'無期限'}
+            ${t.note?`　📝 ${escapeHtml(t.note)}`:''}
+          </div>
+        </div>
+        <button class="todo-delete" title="刪除">✕</button>
+      </div>
+    `).join(''):'<div class="todo-empty">目前沒有待辦事項</div>';
+
+    const openCount=items.filter(t=>!t.done).length;
+    return `<section class="todo-section">
+      <div class="todo-section-title"><span>${label}</span><span class="todo-count">${openCount} 件未完成</span></div>
+      ${rows}
+    </section>`;
+  }).join('');
+
+  board.querySelectorAll('.todo-task').forEach(row=>{
+    const id=row.dataset.id;
+    row.querySelector('.todo-check').onchange=e=>{
+      const item=todoItems.find(t=>t.id===id);
+      if(item){item.done=e.target.checked;persistTodos();renderTodoPage();renderSide();}
+    };
+    row.querySelector('.todo-delete').onclick=()=>{
+      todoItems=todoItems.filter(t=>t.id!==id);
+      persistTodos();
+      renderTodoPage();
+      renderSide();
+    };
+  });
+}
+function escapeHtml(value){
+  return String(value??'').replace(/[&<>"']/g,ch=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+  }[ch]));
+}
+
+
+function persistIdeas(){
+  localStorage.setItem(IDEA_KEY,JSON.stringify(ideaItems));
+}
+function renderIdeasPage(){
+  const board=$('ideaBoard');
+  if(!board)return;
+
+  const n=new Date();
+  const dateEl=$('ideasPageToday');
+  if(dateEl)dateEl.textContent=`${n.getFullYear()} 年 ${n.getMonth()+1} 月 ${n.getDate()} 日`;
+
+  const sorted=[...ideaItems].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+
+  board.innerHTML=sorted.length?sorted.map(item=>`
+    <article class="idea-card" data-id="${item.id}">
+      <div class="idea-card-top">
+        <span class="idea-badge">${ideaCategoryLabel(item.category)}</span>
+        <div class="idea-actions">
+          <button class="idea-delete" title="刪除">✕</button>
+        </div>
+      </div>
+      <div class="idea-text">${escapeHtml(item.text)}</div>
+      <div class="idea-meta">${formatIdeaTime(item.createdAt)}</div>
+    </article>
+  `).join(''):'<div class="idea-empty">目前還沒有靈感，想到什麼就先記下來 ✨</div>';
+
+  board.querySelectorAll('.idea-card').forEach(card=>{
+    card.querySelector('.idea-delete').onclick=()=>{
+      ideaItems=ideaItems.filter(i=>i.id!==card.dataset.id);
+      persistIdeas();
+      renderIdeasPage();
+      renderHomeIdeas();
+    };
+  });
+}
+function ideaCategoryLabel(category){
+  return ({
+    '生活':'🌿 生活',
+    '孩子':'👦 孩子',
+    '工作':'💼 工作',
+    '旅行':'✈️ 旅行',
+    '其他':'✨ 其他'
+  })[category]||'✨ 其他';
+}
+function formatIdeaTime(iso){
+  if(!iso)return '';
+  const d=new Date(iso);
+  if(Number.isNaN(d.getTime()))return '';
+  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function renderHomeIdeas(){
+  const box=$('homeIdeas');
+  if(!box)return;
+  const latest=[...ideaItems]
+    .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))
+    .slice(0,4);
+
+  box.innerHTML=latest.length?latest.map(item=>`
+    <div class="row">
+      <span class="tag">${ideaCategoryLabel(item.category)}</span>
+      <span class="grow">${escapeHtml(item.text)}</span>
+    </div>
+  `).join(''):'<div class="muted">目前還沒有小靈感</div>';
+}
+
+function renderAll(){
+  renderHeader();
+  renderCountdown();
+  renderCalendar();
+  renderSide();
+  renderFullCalendar();
+}
+
+
+$('fullPrev').onclick=()=>{view.setMonth(view.getMonth()-1);renderCalendar();renderFullCalendar()};
+$('fullNext').onclick=()=>{view.setMonth(view.getMonth()+1);renderCalendar();renderFullCalendar()};
+$('fullNow').onclick=()=>{view=new Date();view.setDate(1);renderCalendar();renderFullCalendar()};
+$('calendarQuick').onclick=()=>{
+  $('edate').value=ds(new Date());
+  $('modal').classList.add('show');
+};
+
+
+
+$('ideaQuick').onclick=()=>{
+  $('ideaCategory').value='生活';
+  $('ideaText').value='';
+  $('ideaModal').classList.add('show');
+};
+$('ideaCancel').onclick=()=>$('ideaModal').classList.remove('show');
+$('ideaSave').onclick=()=>{
+  const textValue=$('ideaText').value.trim();
+  if(!textValue)return;
+  ideaItems.push({
+    id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString()),
+    category:$('ideaCategory').value,
+    text:textValue,
+    createdAt:new Date().toISOString()
+  });
+  persistIdeas();
+  $('ideaModal').classList.remove('show');
+  renderIdeasPage();
+  renderHomeIdeas();
+};
+
+$('todoQuick').onclick=()=>{
+  $('todoName').value='';
+  $('todoCategory').value='個人';
+  $('todoDue').value='';
+  $('todoNote').value='';
+  $('todoModal').classList.add('show');
+};
+$('todoCancel').onclick=()=>$('todoModal').classList.remove('show');
+$('todoSave').onclick=()=>{
+  const name=$('todoName').value.trim();
+  if(!name)return;
+  todoItems.push({
+    id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString()),
+    name,
+    category:$('todoCategory').value,
+    dueDate:$('todoDue').value,
+    note:$('todoNote').value.trim(),
+    done:false
+  });
+  persistTodos();
+  $('todoModal').classList.remove('show');
+  renderTodoPage();
+  renderSide();
+};
+document.querySelectorAll('#todoFilters button').forEach(btn=>{
+  btn.onclick=()=>{
+    todoFilter=btn.dataset.filter;
+    document.querySelectorAll('#todoFilters button').forEach(b=>b.classList.toggle('active',b===btn));
+    renderTodoPage();
+  };
+});
+
+$('tripDate').onchange=()=>{
+  localStorage.setItem('lala_trip',$('tripDate').value);
+  renderCountdown();
+};
+$('prev').onclick=()=>{view.setMonth(view.getMonth()-1);renderCalendar()};
+$('next').onclick=()=>{view.setMonth(view.getMonth()+1);renderCalendar()};
+$('now').onclick=()=>{view=new Date();view.setDate(1);renderCalendar()};
+
+$('quick').onclick=()=>{
+  $('edate').value=ds(new Date());
+  $('modal').classList.add('show');
+};
+$('cancel').onclick=()=>$('modal').classList.remove('show');
+$('saveEvent').onclick=()=>{
+  const name=$('ename').value.trim();
+  const date=$('edate').value;
+  if(!name||!date)return;
+  events.push({
+    id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString()),
+    name,
+    category:$('ecat').value,
+    date
+  });
+  $('ename').value='';
+  $('modal').classList.remove('show');
+  persistEvents();
+  renderAll();
+};
+
+renderAll();
+
+document.querySelectorAll('.mobile-nav').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    showView(btn.dataset.view);
+    document.querySelectorAll('.mobile-nav').forEach(x=>x.classList.toggle('active',x===btn));
+    window.scrollTo(0,0);
+  });
+});
+
+</script>
+</body>
+</html>
