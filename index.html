@@ -553,6 +553,10 @@ async function createTodoInNotion(item){
 async function updateTodoInNotion(item){
   return todoApi('/'+encodeURIComponent(item.id),{method:'PATCH',body:JSON.stringify({title:item.name,category:item.category,done:item.done,dueDate:item.dueDate||null,note:item.note||''})});
 }
+
+async function deleteTodoInNotion(id){
+  return todoApi('/'+encodeURIComponent(id),{method:'DELETE'});
+}
 function renderTodoPage(){
   const board=$('todoBoard');
   if(!board)return;
@@ -608,7 +612,24 @@ function renderTodoPage(){
       const item=todoItems.find(t=>t.id===id);
       if(item){const previous=item.done;item.done=e.target.checked;persistTodos();renderTodoPage();renderSide();setTodoSyncStatus('☁️ 正在同步 Notion…');try{await updateTodoInNotion(item);setTodoSyncStatus('☁️ Notion 已同步');}catch(error){item.done=previous;persistTodos();renderTodoPage();renderSide();setTodoSyncStatus('⚠️ 同步失敗');alert(error.message);}}
     };
-    row.querySelector('.todo-delete').onclick=()=>{alert('目前測試版先保留 Notion 資料，刪除同步會在下一步開啟。');};
+    row.querySelector('.todo-delete').onclick=async()=>{
+      const item=todoItems.find(t=>t.id===id);
+      if(!item)return;
+      if(!confirm(`確定要刪除「${item.name}」嗎？\n刪除後會同步移至 Notion 垃圾桶。`))return;
+      setTodoSyncStatus('☁️ 正在同步 Notion…');
+      try{
+        await deleteTodoInNotion(id);
+        todoItems=todoItems.filter(t=>t.id!==id);
+        persistTodos();
+        renderTodoPage();
+        renderSide();
+        setTodoSyncStatus('☁️ Notion 已同步');
+      }catch(error){
+        console.error(error);
+        setTodoSyncStatus('⚠️ 刪除失敗');
+        alert(error.message);
+      }
+    };
   });
 }
 function escapeHtml(value){
