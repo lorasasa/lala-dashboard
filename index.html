@@ -529,7 +529,18 @@ async function todoApi(path='',options={}){
   if(!response.ok||data.success===false)throw new Error(data?.error?.message||data?.error||`同步失敗 (${response.status})`);
   return data;
 }
-function normalizeCloudTodo(t){return {id:t.id,name:t.name||t.title||'',category:t.category||'個人',dueDate:t.dueDate||t.due_date||'',note:t.note||'',done:Boolean(t.done)};}
+function normalizeCloudTodo(t){
+  const rawCategory=String(t.category||'個人').trim();
+  const category=rawCategory.replace(/^[^\p{L}\p{N}]+/u,'').trim()||'個人';
+  return {
+    id:t.id,
+    name:t.name||t.title||'',
+    category,
+    dueDate:t.dueDate||t.due_date||t.due||'',
+    note:t.note||'',
+    done:Boolean(t.done)
+  };
+}
 async function loadTodosFromNotion(){
   setTodoSyncStatus('☁️ 正在同步 Notion…');
   try{const data=await todoApi('',{method:'GET'});todoItems=(data.todos||[]).map(normalizeCloudTodo);persistTodos();renderTodoPage();renderSide();setTodoSyncStatus('☁️ Notion 已同步');}
