@@ -234,7 +234,10 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
       <div class="calendar-page-title">📅 行事曆</div>
       <div class="today-date" id="calendarPageToday"></div>
     </div>
-    <button class="quick" id="calendarQuick">＋ 快速新增行程</button>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<span id="eventSyncStatus" class="muted">☁️ 尚未連線 Notion</span>
+<button class="quick" id="calendarQuick">＋ 快速新增行程</button>
+</div>
   </div>
   <div class="card full-calendar-card">
     <div class="calhead">
@@ -352,6 +355,7 @@ let events=JSON.parse(localStorage.getItem(KEY)||'[]');
 const TODO_KEY='lala_dashboard_v1_todos';
 let todoItems=JSON.parse(localStorage.getItem(TODO_KEY)||'[]');
 const TODO_API='https://lala-notion-api.lorasasa.workers.dev/todos';
+const EVENT_API='https://lala-notion-api.lorasasa.workers.dev/events';
 const DASHBOARD_KEY_STORAGE='lala_dashboard_api_key';
 let todoFilter='all';
 const IDEA_KEY='lala_dashboard_v1_ideas';
@@ -364,6 +368,41 @@ const ds=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
 function persistEvents(){
   localStorage.setItem(KEY,JSON.stringify(events));
+}
+
+function setEventSyncStatus(s){const el=$('eventSyncStatus');if(el)el.textContent=s;}
+async function eventApi(path='',options={}){
+  const key=getDashboardApiKey(); if(!key)throw new Error('尚未輸入 API Key');
+  const response=await fetch(EVENT_API+path,{...options,headers:{'X-Dashboard-Key':key,'Content-Type':'application/json',...(options.headers||{})}});
+  let data={}; try{data=await response.json()}catch(e){}
+  if(response.status===401){localStorage.removeItem(DASHBOARD_KEY_STORAGE);throw new Error('API Key 驗證失敗，請重新輸入');}
+  if(!response.ok||data.success===false)throw new Error(data?.error?.message||data?.error||`同步失敗 (${response.status})`);
+  return data;
+}
+function normalizeCloudEvent(e){return {id:e.id,name:e.name||e.title||'',date:e.date||'',category:e.category||'一般'};}
+async function loadEventsFromNotion(){
+  setEventSyncStatus('☁️ 正在同步 Notion…');
+  try{const data=await eventApi('',{method:'GET'});events=(data.events||[]).map(normalizeCloudEvent);persistEvents();renderAll();setEventSyncStatus('☁️ Notion 已同步');}
+  catch(error){console.error(error);setEventSyncStatus('⚠️ 使用本機行事曆');}
+}
+async function createEventInNotion(item){
+  const data=await eventApi('',{method:'POST',body:JSON.stringify({name:item.name,date:item.date,category:item.category})});
+  return data.event?.id||data.id;
+}
+async function updateEventInNotion(item){return eventApi('/'+encodeURIComponent(item.id),{method:'PATCH',body:JSON.stringify({name:item.name,date:item.date,category:item.category})});}
+async function deleteEventInNotion(id){return eventApi('/'+encodeURIComponent(id),{method:'DELETE'});}
+async function moveEventToDate(id,newDate){
+  const item=events.find(x=>x.id===id); if(!item||item.date===newDate)return;
+  const previous=item.date; item.date=newDate; persistEvents(); renderAll(); setEventSyncStatus('☁️ 正在同步 Notion…');
+  try{await updateEventInNotion(item);setEventSyncStatus('☁️ Notion 已同步');}
+  catch(error){item.date=previous;persistEvents();renderAll();setEventSyncStatus('⚠️ 同步失敗');alert(error.message);}
+}
+async function removeEvent(id){
+  const item=events.find(x=>x.id===id); if(!item)return;
+  if(!confirm(`確定要刪除「${item.name}」嗎？\n刪除後會同步移至 Notion 垃圾桶。`))return;
+  setEventSyncStatus('☁️ 正在同步 Notion…');
+  try{await deleteEventInNotion(id);events=events.filter(x=>x.id!==id);persistEvents();renderAll();setEventSyncStatus('☁️ Notion 已同步');}
+  catch(error){console.error(error);setEventSyncStatus('⚠️ 刪除失敗');alert(error.message);}
 }
 function greeting(){
   const h=new Date().getHours();
@@ -419,7 +458,7 @@ function renderCalendar(){
     el.ondrop=e=>{
       const id=e.dataTransfer.getData('text/plain');
       const item=events.find(x=>x.id===id);
-      if(item){item.date=key;persistEvents();renderAll()}
+      if(item)moveEventToDate(id,key)
     };
     calendar.appendChild(el);
   }
@@ -494,7 +533,7 @@ function renderFullCalendar(){
     el.ondrop=e=>{
       const id=e.dataTransfer.getData('text/plain');
       const item=events.find(x=>x.id===id);
-      if(item){item.date=key;persistEvents();renderAll()}
+      if(item)moveEventToDate(id,key)
     };
     calendar.appendChild(el);
   }
@@ -781,23 +820,19 @@ $('quick').onclick=()=>{
   $('modal').classList.add('show');
 };
 $('cancel').onclick=()=>$('modal').classList.remove('show');
-$('saveEvent').onclick=()=>{
+$('saveEvent').onclick=async()=>{
   const name=$('ename').value.trim();
   const date=$('edate').value;
   if(!name||!date)return;
-  events.push({
-    id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString()),
-    name,
-    category:$('ecat').value,
-    date
-  });
-  $('ename').value='';
+  const item={id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString()),name,category:$('ecat').value,date};
   $('modal').classList.remove('show');
-  persistEvents();
-  renderAll();
+  setEventSyncStatus('☁️ 正在同步 Notion…');
+  try{item.id=await createEventInNotion(item);events.push(item);persistEvents();renderAll();setEventSyncStatus('☁️ Notion 已同步');$('ename').value='';}
+  catch(error){console.error(error);setEventSyncStatus('⚠️ 新增失敗');alert(error.message);}
 };
 
 renderAll();
+loadEventsFromNotion();
 loadTodosFromNotion();
 
 document.querySelectorAll('.mobile-nav').forEach(btn=>{
