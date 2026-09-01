@@ -279,7 +279,10 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
         <div class="calendar-page-title">💡 腦海中的小靈感</div>
         <div class="today-date" id="ideasPageToday"></div>
       </div>
-      <button class="quick" id="ideaQuick">＋ 新增靈感</button>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span id="ideaSyncStatus" class="muted">☁️ 尚未連線 Notion</span>
+        <button class="quick" id="ideaQuick">＋ 新增靈感</button>
+      </div>
     </div>
     <div class="idea-board" id="ideaBoard"></div>
   </div>
@@ -373,6 +376,7 @@ const TODO_KEY='lala_dashboard_v1_todos';
 let todoItems=JSON.parse(localStorage.getItem(TODO_KEY)||'[]');
 const TODO_API='https://lala-notion-api.lorasasa.workers.dev/todos';
 const EVENT_API='https://lala-notion-api.lorasasa.workers.dev/events';
+const IDEA_API='https://lala-notion-api.lorasasa.workers.dev/ideas';
 const DASHBOARD_KEY_STORAGE='lala_dashboard_api_key';
 let todoFilter='all';
 const IDEA_KEY='lala_dashboard_v1_ideas';
@@ -713,6 +717,47 @@ function escapeHtml(value){
 function persistIdeas(){
   localStorage.setItem(IDEA_KEY,JSON.stringify(ideaItems));
 }
+
+function setIdeaSyncStatus(s){const el=$('ideaSyncStatus');if(el)el.textContent=s;}
+
+async function ideaApi(path='',options={}){
+  const key=getDashboardApiKey(); if(!key)throw new Error('尚未輸入 API Key');
+  const response=await fetch(IDEA_API+path,{...options,headers:{'X-Dashboard-Key':key,'Content-Type':'application/json',...(options.headers||{})}});
+  let data={}; try{data=await response.json()}catch(e){}
+  if(response.status===401){localStorage.removeItem(DASHBOARD_KEY_STORAGE);throw new Error('API Key 驗證失敗，請重新輸入');}
+  if(!response.ok||data.success===false)throw new Error(data?.error?.message||data?.error||`同步失敗 (${response.status})`);
+  return data;
+}
+
+function normalizeCloudIdea(i){
+  const rawCategory=String(i.category||'其他').trim();
+  const category=rawCategory.replace(/^[^\p{L}\p{N}]+/u,'').trim()||'其他';
+  return {id:i.id,text:i.text||i.title||'',category,createdAt:i.createdAt||i.created_time||''};
+}
+
+async function loadIdeasFromNotion(){
+  setIdeaSyncStatus('☁️ 正在同步 Notion…');
+  try{
+    const data=await ideaApi('',{method:'GET'});
+    ideaItems=(data.ideas||[]).map(normalizeCloudIdea);
+    persistIdeas();
+    renderIdeasPage();
+    renderHomeIdeas();
+    setIdeaSyncStatus('☁️ Notion 已同步');
+  }catch(error){
+    console.error(error);
+    setIdeaSyncStatus('⚠️ 使用本機小靈感');
+  }
+}
+
+async function createIdeaInNotion(item){
+  const data=await ideaApi('',{method:'POST',body:JSON.stringify({text:item.text,category:item.category})});
+  return data.idea||{id:data.id,text:item.text,category:item.category,createdAt:new Date().toISOString()};
+}
+
+async function deleteIdeaInNotion(id){
+  return ideaApi('/'+encodeURIComponent(id),{method:'DELETE'});
+}
 function renderIdeasPage(){
   const board=$('ideaBoard');
   if(!board)return;
@@ -737,11 +782,24 @@ function renderIdeasPage(){
   `).join(''):'<div class="idea-empty">目前還沒有靈感，想到什麼就先記下來 ✨</div>';
 
   board.querySelectorAll('.idea-card').forEach(card=>{
-    card.querySelector('.idea-delete').onclick=()=>{
-      ideaItems=ideaItems.filter(i=>i.id!==card.dataset.id);
-      persistIdeas();
-      renderIdeasPage();
-      renderHomeIdeas();
+    card.querySelector('.idea-delete').onclick=async()=>{
+      const id=card.dataset.id;
+      const item=ideaItems.find(i=>i.id===id);
+      if(!item)return;
+      if(!confirm(`確定要刪除「${item.text}」嗎？\n刪除後會同步移至 Notion 垃圾桶。`))return;
+      setIdeaSyncStatus('☁️ 正在同步 Notion…');
+      try{
+        await deleteIdeaInNotion(id);
+        ideaItems=ideaItems.filter(i=>i.id!==id);
+        persistIdeas();
+        renderIdeasPage();
+        renderHomeIdeas();
+        setIdeaSyncStatus('☁️ Notion 已同步');
+      }catch(error){
+        console.error(error);
+        setIdeaSyncStatus('⚠️ 刪除失敗');
+        alert(error.message);
+      }
     };
   });
 }
@@ -800,19 +858,25 @@ $('ideaQuick').onclick=()=>{
   $('ideaModal').classList.add('show');
 };
 $('ideaCancel').onclick=()=>$('ideaModal').classList.remove('show');
-$('ideaSave').onclick=()=>{
+$('ideaSave').onclick=async()=>{
   const textValue=$('ideaText').value.trim();
   if(!textValue)return;
-  ideaItems.push({
-    id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString()),
-    category:$('ideaCategory').value,
-    text:textValue,
-    createdAt:new Date().toISOString()
-  });
-  persistIdeas();
+  const item={category:$('ideaCategory').value,text:textValue};
   $('ideaModal').classList.remove('show');
-  renderIdeasPage();
-  renderHomeIdeas();
+  setIdeaSyncStatus('☁️ 正在同步 Notion…');
+  try{
+    const cloudIdea=await createIdeaInNotion(item);
+    ideaItems.push(normalizeCloudIdea(cloudIdea));
+    persistIdeas();
+    renderIdeasPage();
+    renderHomeIdeas();
+    setIdeaSyncStatus('☁️ Notion 已同步');
+    $('ideaText').value='';
+  }catch(error){
+    console.error(error);
+    setIdeaSyncStatus('⚠️ 新增失敗');
+    alert(error.message);
+  }
 };
 
 $('todoQuick').onclick=()=>{
@@ -884,6 +948,7 @@ $('editEventDelete').onclick=async()=>{
 renderAll();
 loadEventsFromNotion();
 loadTodosFromNotion();
+loadIdeasFromNotion();
 
 document.querySelectorAll('.mobile-nav').forEach(btn=>{
   btn.addEventListener('click',()=>{
