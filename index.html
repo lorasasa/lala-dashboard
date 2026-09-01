@@ -348,6 +348,23 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
     </div>
   </div>
 </div>
+<div class="modal" id="eventEditModal">
+  <div class="box">
+    <div class="title">📅 編輯行程</div>
+    <input id="editEventName" placeholder="行程內容">
+    <select id="editEventCategory">
+      <option>一般</option><option>工作</option><option>孩子</option><option>家庭</option><option>旅遊</option>
+    </select>
+    <input id="editEventDate" type="date">
+    <div class="actions" style="justify-content:space-between">
+      <button id="editEventDelete" style="background:#fff0f2;color:#c93650">🗑️ 刪除行程</button>
+      <div style="display:flex;gap:8px">
+        <button id="editEventCancel">取消</button>
+        <button class="save-btn" id="editEventSave">儲存修改</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 const KEY='lala_dashboard_v1_events';
@@ -404,6 +421,19 @@ async function removeEvent(id){
   try{await deleteEventInNotion(id);events=events.filter(x=>x.id!==id);persistEvents();renderAll();setEventSyncStatus('☁️ Notion 已同步');}
   catch(error){console.error(error);setEventSyncStatus('⚠️ 刪除失敗');alert(error.message);}
 }
+let editingEventId=null;
+function openEventEditor(id){
+  const item=events.find(x=>x.id===id); if(!item)return;
+  editingEventId=id;
+  $('editEventName').value=item.name||'';
+  $('editEventCategory').value=item.category||'一般';
+  $('editEventDate').value=item.date||'';
+  $('eventEditModal').classList.add('show');
+}
+function closeEventEditor(){
+  editingEventId=null;
+  $('eventEditModal').classList.remove('show');
+}
 function greeting(){
   const h=new Date().getHours();
   if(h<12) return {text:'早安', icon:'☀️'};
@@ -451,6 +481,7 @@ function renderCalendar(){
       item.textContent=e.name;
       item.draggable=true;
       item.ondragstart=ev=>ev.dataTransfer.setData('text/plain',e.id);
+      item.onclick=ev=>{ev.stopPropagation();openEventEditor(e.id);};
       el.appendChild(item);
     });
 
@@ -527,6 +558,7 @@ function renderFullCalendar(){
       item.textContent=`${e.category}｜${e.name}`;
       item.draggable=true;
       item.ondragstart=ev=>ev.dataTransfer.setData('text/plain',e.id);
+      item.onclick=ev=>{ev.stopPropagation();openEventEditor(e.id);};
       el.appendChild(item);
     });
     el.ondragover=e=>e.preventDefault();
@@ -829,6 +861,24 @@ $('saveEvent').onclick=async()=>{
   setEventSyncStatus('☁️ 正在同步 Notion…');
   try{item.id=await createEventInNotion(item);events.push(item);persistEvents();renderAll();setEventSyncStatus('☁️ Notion 已同步');$('ename').value='';}
   catch(error){console.error(error);setEventSyncStatus('⚠️ 新增失敗');alert(error.message);}
+};
+$('editEventCancel').onclick=()=>closeEventEditor();
+$('editEventSave').onclick=async()=>{
+  const item=events.find(x=>x.id===editingEventId); if(!item)return;
+  const name=$('editEventName').value.trim(), date=$('editEventDate').value;
+  if(!name||!date)return;
+  const previous={name:item.name,date:item.date,category:item.category};
+  item.name=name; item.date=date; item.category=$('editEventCategory').value;
+  setEventSyncStatus('☁️ 正在同步 Notion…');
+  try{await updateEventInNotion(item);persistEvents();closeEventEditor();renderAll();setEventSyncStatus('☁️ Notion 已同步');}
+  catch(error){Object.assign(item,previous);persistEvents();renderAll();setEventSyncStatus('⚠️ 修改失敗');alert(error.message);}
+};
+$('editEventDelete').onclick=async()=>{
+  const id=editingEventId, item=events.find(x=>x.id===id); if(!item)return;
+  if(!confirm(`確定要刪除「${item.name}」嗎？\n刪除後會同步移至 Notion 垃圾桶。`))return;
+  setEventSyncStatus('☁️ 正在同步 Notion…');
+  try{await deleteEventInNotion(id);events=events.filter(x=>x.id!==id);persistEvents();closeEventEditor();renderAll();setEventSyncStatus('☁️ Notion 已同步');}
+  catch(error){console.error(error);setEventSyncStatus('⚠️ 刪除失敗');alert(error.message);}
 };
 
 renderAll();
