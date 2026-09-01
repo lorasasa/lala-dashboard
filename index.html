@@ -504,14 +504,6 @@ function renderCalendar(){
       el.appendChild(item);
     });
 
-    holidayForDate(key).forEach(h=>{
-      const item=document.createElement('div');
-      item.className='event holiday-event';
-      item.textContent=`🇹🇼 國定假日｜${h.name}`;
-      item.title='台灣政府行政機關辦公日曆';
-      el.appendChild(item);
-    });
-
     events.filter(e=>e.date===key).forEach(e=>{
       const item=document.createElement('div');
       item.className='event';
@@ -592,6 +584,14 @@ function renderFullCalendar(){
     el.className='day '+(cur.getDay()===0?'sun ':'')+(cur.getDay()===6?'sat ':'')+(key===ds(new Date())?'today ':'');
     el.style.opacity=dim?'.35':'1';
     el.innerHTML=`<b>${cur.getDate()}</b>`;
+    holidayForDate(key).forEach(h=>{
+      const item=document.createElement('div');
+      item.className='event holiday-event';
+      item.textContent=`🇹🇼 ${h.name}`;
+      item.title='台灣政府行政機關辦公日曆';
+      el.appendChild(item);
+    });
+
     events.filter(e=>e.date===key).forEach(e=>{
       const item=document.createElement('div');
       item.className='event';
