@@ -41,6 +41,8 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
 .day.sun{color:red}.day.sat{color:#2563eb}
 .day.today b{background:#ff6688;color:#fff;border-radius:50%;display:inline-grid;place-items:center;width:28px;height:28px}
 .event{font-size:11px;border-radius:7px;padding:4px;margin-top:4px;background:#ffe2e8;color:#9f2943;cursor:grab}
+.holiday-event{background:#eef6ff;color:#315f88;cursor:default;border:1px solid #d8e9f8}
+.leave-event{background:#eaf8ee;color:#33734a}
 .list{display:grid;gap:0}
 .row{display:flex;gap:10px;align-items:center;padding:11px 0;border-top:1px solid #f0e8de}
 .row:first-child{border-top:0}
@@ -342,7 +344,7 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
     <div class="title">➕ 快速新增行程</div>
     <input id="ename" placeholder="行程內容">
     <select id="ecat">
-      <option>一般</option><option>工作</option><option>孩子</option><option>家庭</option><option>旅遊</option>
+      <option>一般</option><option>工作</option><option>孩子</option><option>家庭</option><option>旅遊</option><option>🏖️ 休假</option>
     </select>
     <input id="edate" type="date">
     <div class="actions">
@@ -356,7 +358,7 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
     <div class="title">📅 編輯行程</div>
     <input id="editEventName" placeholder="行程內容">
     <select id="editEventCategory">
-      <option>一般</option><option>工作</option><option>孩子</option><option>家庭</option><option>旅遊</option>
+      <option>一般</option><option>工作</option><option>孩子</option><option>家庭</option><option>旅遊</option><option>🏖️ 休假</option>
     </select>
     <input id="editEventDate" type="date">
     <div class="actions" style="justify-content:space-between">
@@ -377,6 +379,8 @@ let todoItems=JSON.parse(localStorage.getItem(TODO_KEY)||'[]');
 const TODO_API='https://lala-notion-api.lorasasa.workers.dev/todos';
 const EVENT_API='https://lala-notion-api.lorasasa.workers.dev/events';
 const IDEA_API='https://lala-notion-api.lorasasa.workers.dev/ideas';
+const HOLIDAY_API='https://lala-notion-api.lorasasa.workers.dev/holidays';
+let holidays=[];
 const DASHBOARD_KEY_STORAGE='lala_dashboard_api_key';
 let todoFilter='all';
 const IDEA_KEY='lala_dashboard_v1_ideas';
@@ -400,6 +404,19 @@ async function eventApi(path='',options={}){
   if(!response.ok||data.success===false)throw new Error(data?.error?.message||data?.error||`同步失敗 (${response.status})`);
   return data;
 }
+async function loadHolidays(year){
+  const key=getDashboardApiKey(); if(!key)return;
+  try{
+    const response=await fetch(`${HOLIDAY_API}?year=${encodeURIComponent(year)}`,{headers:{'X-Dashboard-Key':key}});
+    const data=await response.json();
+    if(!response.ok||data.success===false)throw new Error(data?.error||`假日讀取失敗 (${response.status})`);
+    holidays=(data.holidays||[]).map(h=>({date:h.date||'',name:h.name||'',category:'國定假日',source:'DGPA'}));
+    renderCalendar();renderFullCalendar();renderSide();
+  }catch(error){console.error('國定假日讀取失敗',error);}
+}
+
+function holidayForDate(date){return holidays.filter(h=>h.date===date);}
+
 function normalizeCloudEvent(e){return {id:e.id,name:e.name||e.title||'',date:e.date||'',category:e.category||'一般'};}
 async function loadEventsFromNotion(){
   setEventSyncStatus('☁️ 正在同步 Notion…');
@@ -479,6 +496,22 @@ function renderCalendar(){
     el.style.opacity=dim?'.35':'1';
     el.innerHTML=`<b>${cur.getDate()}</b>`;
 
+    holidayForDate(key).forEach(h=>{
+      const item=document.createElement('div');
+      item.className='event holiday-event';
+      item.textContent=`🇹🇼 ${h.name}`;
+      item.title='台灣政府行政機關辦公日曆';
+      el.appendChild(item);
+    });
+
+    holidayForDate(key).forEach(h=>{
+      const item=document.createElement('div');
+      item.className='event holiday-event';
+      item.textContent=`🇹🇼 國定假日｜${h.name}`;
+      item.title='台灣政府行政機關辦公日曆';
+      el.appendChild(item);
+    });
+
     events.filter(e=>e.date===key).forEach(e=>{
       const item=document.createElement('div');
       item.className='event';
@@ -503,7 +536,10 @@ function renderSide(){
   const start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   const end=new Date(start); end.setDate(end.getDate()+2);
 
-  const nearEvents=events.filter(e=>{
+  const nearEvents=[
+    ...events,
+    ...holidays.map(h=>({...h,id:`holiday-${h.date}-${h.name}`,category:'🇹🇼 國定假日'}))
+  ].filter(e=>{
     const d=new Date(e.date+'T00:00:00');
     return d>=start&&d<=end;
   }).sort((a,b)=>a.date.localeCompare(b.date));
@@ -842,9 +878,9 @@ function renderAll(){
 }
 
 
-$('fullPrev').onclick=()=>{view.setMonth(view.getMonth()-1);renderCalendar();renderFullCalendar()};
-$('fullNext').onclick=()=>{view.setMonth(view.getMonth()+1);renderCalendar();renderFullCalendar()};
-$('fullNow').onclick=()=>{view=new Date();view.setDate(1);renderCalendar();renderFullCalendar()};
+$('fullPrev').onclick=()=>{view.setMonth(view.getMonth()-1);renderCalendar();renderFullCalendar();loadHolidays(view.getFullYear())};
+$('fullNext').onclick=()=>{view.setMonth(view.getMonth()+1);renderCalendar();renderFullCalendar();loadHolidays(view.getFullYear())};
+$('fullNow').onclick=()=>{view=new Date();view.setDate(1);renderCalendar();renderFullCalendar();loadHolidays(view.getFullYear())};
 $('calendarQuick').onclick=()=>{
   $('edate').value=ds(new Date());
   $('modal').classList.add('show');
@@ -907,9 +943,9 @@ $('tripDate').onchange=()=>{
   localStorage.setItem('lala_trip',$('tripDate').value);
   renderCountdown();
 };
-$('prev').onclick=()=>{view.setMonth(view.getMonth()-1);renderCalendar()};
-$('next').onclick=()=>{view.setMonth(view.getMonth()+1);renderCalendar()};
-$('now').onclick=()=>{view=new Date();view.setDate(1);renderCalendar()};
+$('prev').onclick=()=>{view.setMonth(view.getMonth()-1);renderCalendar();loadHolidays(view.getFullYear())};
+$('next').onclick=()=>{view.setMonth(view.getMonth()+1);renderCalendar();loadHolidays(view.getFullYear())};
+$('now').onclick=()=>{view=new Date();view.setDate(1);renderCalendar();loadHolidays(view.getFullYear())};
 
 $('quick').onclick=()=>{
   $('edate').value=ds(new Date());
@@ -947,6 +983,7 @@ $('editEventDelete').onclick=async()=>{
 
 renderAll();
 loadEventsFromNotion();
+loadHolidays(view.getFullYear());
 loadTodosFromNotion();
 loadIdeasFromNotion();
 
