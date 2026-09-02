@@ -238,6 +238,7 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
 <span id="eventSyncStatus" class="muted">☁️ 尚未連線 Notion</span>
+<button class="quick" id="notificationEnable">🔔 開啟通知</button>
 <button class="quick" id="calendarQuick">＋ 快速新增行程</button>
 </div>
   </div>
@@ -1001,6 +1002,11 @@ loadEventsFromNotion();
 loadHolidays(view.getFullYear());
 loadTodosFromNotion();
 loadIdeasFromNotion();
+
+
+async function updateNotificationButton(){const b=$('notificationEnable');if(!b)return;if(!('Notification'in window)||!('serviceWorker'in navigator)){b.textContent='🔕 不支援通知';b.disabled=true;return;}b.textContent=Notification.permission==='granted'?'🔔 通知已開啟':Notification.permission==='denied'?'🔕 通知已被拒絕':'🔔 開啟通知';}
+$('notificationEnable').onclick=async()=>{try{const p=await Notification.requestPermission();await updateNotificationButton();if(p!=='granted')return;const r=await navigator.serviceWorker.ready;r.active?.postMessage({type:'LALA_TEST_NOTIFICATION'});}catch(e){alert('開啟通知失敗：'+e.message);}};
+updateNotificationButton();
 
 document.querySelectorAll('.mobile-nav').forEach(btn=>{
   btn.addEventListener('click',()=>{
