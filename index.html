@@ -346,7 +346,9 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
     <select id="ecat">
       <option>一般</option><option>工作</option><option>孩子</option><option>家庭</option><option>旅遊</option><option>🏖️ 休假</option>
     </select>
-    <input id="edate" type="date">
+    <div class="muted">日期</div><input id="edate" type="date">
+    <div class="muted">時間（可留白）</div><input id="etime" type="time">
+    <div class="muted">🔔 提醒</div><select id="ereminder"><option>不提醒</option><option>準時</option><option>10 分鐘前</option><option>30 分鐘前</option><option>1 小時前</option><option>1 天前</option></select>
     <div class="actions">
       <button id="cancel">取消</button>
       <button class="save-btn" id="saveEvent">新增</button>
@@ -360,7 +362,9 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
     <select id="editEventCategory">
       <option>一般</option><option>工作</option><option>孩子</option><option>家庭</option><option>旅遊</option><option>🏖️ 休假</option>
     </select>
-    <input id="editEventDate" type="date">
+    <div class="muted">日期</div><input id="editEventDate" type="date">
+    <div class="muted">時間（可留白）</div><input id="editEventTime" type="time">
+    <div class="muted">🔔 提醒</div><select id="editEventReminder"><option>不提醒</option><option>準時</option><option>10 分鐘前</option><option>30 分鐘前</option><option>1 小時前</option><option>1 天前</option></select>
     <div class="actions" style="justify-content:space-between">
       <button id="editEventDelete" style="background:#fff0f2;color:#c93650">🗑️ 刪除行程</button>
       <div style="display:flex;gap:8px">
@@ -417,21 +421,24 @@ async function loadHolidays(year){
 
 function holidayForDate(date){return holidays.filter(h=>h.date===date);}
 
-function normalizeCloudEvent(e){return {id:e.id,name:e.name||e.title||'',date:e.date||'',category:e.category||'一般'};}
+function eventDatePart(v){return String(v||'').slice(0,10);}
+function eventTimePart(v){const m=String(v||'').match(/T(\d{2}):(\d{2})/);return m?`${m[1]}:${m[2]}`:'';}
+function buildEventDateTime(date,time){return time?`${date}T${time}:00+08:00`:date;}
+function normalizeCloudEvent(e){return {id:e.id,name:e.name||e.title||'',date:e.date||'',category:e.category||'一般',reminder:e.reminder||'不提醒'};}
 async function loadEventsFromNotion(){
   setEventSyncStatus('☁️ 正在同步 Notion…');
   try{const data=await eventApi('',{method:'GET'});events=(data.events||[]).map(normalizeCloudEvent);persistEvents();renderAll();setEventSyncStatus('☁️ Notion 已同步');}
   catch(error){console.error(error);setEventSyncStatus('⚠️ 使用本機行事曆');}
 }
 async function createEventInNotion(item){
-  const data=await eventApi('',{method:'POST',body:JSON.stringify({name:item.name,date:item.date,category:item.category})});
+  const data=await eventApi('',{method:'POST',body:JSON.stringify({name:item.name,date:item.date,category:item.category,reminder:item.reminder||'不提醒'})});
   return data.event?.id||data.id;
 }
-async function updateEventInNotion(item){return eventApi('/'+encodeURIComponent(item.id),{method:'PATCH',body:JSON.stringify({name:item.name,date:item.date,category:item.category})});}
+async function updateEventInNotion(item){return eventApi('/'+encodeURIComponent(item.id),{method:'PATCH',body:JSON.stringify({name:item.name,date:item.date,category:item.category,reminder:item.reminder||'不提醒'})});}
 async function deleteEventInNotion(id){return eventApi('/'+encodeURIComponent(id),{method:'DELETE'});}
 async function moveEventToDate(id,newDate){
-  const item=events.find(x=>x.id===id); if(!item||item.date===newDate)return;
-  const previous=item.date; item.date=newDate; persistEvents(); renderAll(); setEventSyncStatus('☁️ 正在同步 Notion…');
+  const item=events.find(x=>x.id===id); if(!item||eventDatePart(item.date)===newDate)return;
+  const previous=item.date; item.date=buildEventDateTime(newDate,eventTimePart(item.date)); persistEvents(); renderAll(); setEventSyncStatus('☁️ 正在同步 Notion…');
   try{await updateEventInNotion(item);setEventSyncStatus('☁️ Notion 已同步');}
   catch(error){item.date=previous;persistEvents();renderAll();setEventSyncStatus('⚠️ 同步失敗');alert(error.message);}
 }
@@ -448,7 +455,9 @@ function openEventEditor(id){
   editingEventId=id;
   $('editEventName').value=item.name||'';
   $('editEventCategory').value=item.category||'一般';
-  $('editEventDate').value=item.date||'';
+  $('editEventDate').value=eventDatePart(item.date);
+  $('editEventTime').value=eventTimePart(item.date);
+  $('editEventReminder').value=item.reminder||'不提醒';
   $('eventEditModal').classList.add('show');
 }
 function closeEventEditor(){
@@ -504,10 +513,10 @@ function renderCalendar(){
       el.appendChild(item);
     });
 
-    events.filter(e=>e.date===key).forEach(e=>{
+    events.filter(e=>eventDatePart(e.date)===key).forEach(e=>{
       const item=document.createElement('div');
       item.className='event';
-      item.textContent=e.name;
+      item.textContent=`${eventTimePart(e.date)?eventTimePart(e.date)+' ':''}${e.name}`;
       item.draggable=true;
       item.ondragstart=ev=>ev.dataTransfer.setData('text/plain',e.id);
       item.onclick=ev=>{ev.stopPropagation();openEventEditor(e.id);};
@@ -532,12 +541,12 @@ function renderSide(){
     ...events,
     ...holidays.map(h=>({...h,id:`holiday-${h.date}-${h.name}`,category:'🇹🇼 國定假日'}))
   ].filter(e=>{
-    const d=new Date(e.date+'T00:00:00');
+    const d=new Date(eventDatePart(e.date)+'T00:00:00');
     return d>=start&&d<=end;
   }).sort((a,b)=>a.date.localeCompare(b.date));
 
   $('near').innerHTML=nearEvents.length
-    ? nearEvents.map(e=>`<div class="row"><span class="tag">${e.category}</span><span class="grow">${e.name}</span><span class="muted">${e.date.slice(5)}</span></div>`).join('')
+    ? nearEvents.map(e=>`<div class="row"><span class="tag">${e.category}</span><span class="grow">${e.name}</span><span class="muted">${eventDatePart(e.date).slice(5)}${eventTimePart(e.date)?` ${eventTimePart(e.date)}`:''}</span></div>`).join('')
     : '<div class="muted">近三日沒有行程</div>';
 
   const summaryGroups=[
@@ -592,10 +601,10 @@ function renderFullCalendar(){
       el.appendChild(item);
     });
 
-    events.filter(e=>e.date===key).forEach(e=>{
+    events.filter(e=>eventDatePart(e.date)===key).forEach(e=>{
       const item=document.createElement('div');
       item.className='event';
-      item.textContent=`${e.category}｜${e.name}`;
+      item.textContent=`${eventTimePart(e.date)?eventTimePart(e.date)+' ':''}${e.category}｜${e.name}`;
       item.draggable=true;
       item.ondragstart=ev=>ev.dataTransfer.setData('text/plain',e.id);
       item.onclick=ev=>{ev.stopPropagation();openEventEditor(e.id);};
@@ -883,6 +892,7 @@ $('fullNext').onclick=()=>{view.setMonth(view.getMonth()+1);renderCalendar();ren
 $('fullNow').onclick=()=>{view=new Date();view.setDate(1);renderCalendar();renderFullCalendar();loadHolidays(view.getFullYear())};
 $('calendarQuick').onclick=()=>{
   $('edate').value=ds(new Date());
+  $('etime').value=''; $('ereminder').value='不提醒';
   $('modal').classList.add('show');
 };
 
@@ -949,14 +959,17 @@ $('now').onclick=()=>{view=new Date();view.setDate(1);renderCalendar();loadHolid
 
 $('quick').onclick=()=>{
   $('edate').value=ds(new Date());
+  $('etime').value=''; $('ereminder').value='不提醒';
   $('modal').classList.add('show');
 };
 $('cancel').onclick=()=>$('modal').classList.remove('show');
 $('saveEvent').onclick=async()=>{
   const name=$('ename').value.trim();
-  const date=$('edate').value;
+  const date=$('edate').value, time=$('etime').value;
   if(!name||!date)return;
-  const item={id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString()),name,category:$('ecat').value,date};
+  const reminder=$('ereminder').value;
+  if(!time && reminder!=='不提醒'){alert('要設定提醒，請先選擇行程時間。');return;}
+  const item={id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString()),name,category:$('ecat').value,date:buildEventDateTime(date,time),reminder};
   $('modal').classList.remove('show');
   setEventSyncStatus('☁️ 正在同步 Notion…');
   try{item.id=await createEventInNotion(item);events.push(item);persistEvents();renderAll();setEventSyncStatus('☁️ Notion 已同步');$('ename').value='';}
@@ -965,10 +978,12 @@ $('saveEvent').onclick=async()=>{
 $('editEventCancel').onclick=()=>closeEventEditor();
 $('editEventSave').onclick=async()=>{
   const item=events.find(x=>x.id===editingEventId); if(!item)return;
-  const name=$('editEventName').value.trim(), date=$('editEventDate').value;
+  const name=$('editEventName').value.trim(), date=$('editEventDate').value, time=$('editEventTime').value;
   if(!name||!date)return;
-  const previous={name:item.name,date:item.date,category:item.category};
-  item.name=name; item.date=date; item.category=$('editEventCategory').value;
+  const reminder=$('editEventReminder').value;
+  if(!time && reminder!=='不提醒'){alert('要設定提醒，請先選擇行程時間。');return;}
+  const previous={name:item.name,date:item.date,category:item.category,reminder:item.reminder};
+  item.name=name; item.date=buildEventDateTime(date,time); item.category=$('editEventCategory').value; item.reminder=reminder;
   setEventSyncStatus('☁️ 正在同步 Notion…');
   try{await updateEventInNotion(item);persistEvents();closeEventEditor();renderAll();setEventSyncStatus('☁️ Notion 已同步');}
   catch(error){Object.assign(item,previous);persistEvents();renderAll();setEventSyncStatus('⚠️ 修改失敗');alert(error.message);}
