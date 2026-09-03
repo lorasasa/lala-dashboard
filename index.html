@@ -160,177 +160,138 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
 }
 
 
-/* ===== LaLa Dashboard visual v2 · reference-style ===== */
+/* ===== LaLa Dashboard v2.1 · reference style + fit fix ===== */
 :root{
-  --bg:#fffaf3;
-  --side:#fff4d7;
-  --card:#fffefa;
-  --line:#eadfce;
-  --text:#382d27;
-  --muted:#8b796d;
-  --accent:#ff5d78;
-  --blue:#8dbcf1;
+  --bg:#fffaf3;--side:#fff4d7;--card:#fffefa;--line:#eadfce;
+  --text:#382d27;--muted:#8b796d;--accent:#ff5d78;--blue:#8dbcf1;
 }
+html,body{max-width:100%;overflow-x:hidden}
 body{
   background:
     radial-gradient(circle at 90% 5%,rgba(255,215,224,.28),transparent 24%),
     radial-gradient(circle at 4% 90%,rgba(255,230,173,.22),transparent 28%),
     var(--bg);
 }
-.app{grid-template-columns:270px 1fr}
+.app{
+  grid-template-columns:minmax(220px,250px) minmax(0,1fr);
+  width:100%;max-width:100%;
+}
 .side{
-  position:sticky;top:0;height:100vh;
-  padding:20px 16px 14px;
+  position:relative;top:auto;height:auto;min-height:100vh;overflow:visible;
+  padding:18px 14px 14px;
   background:linear-gradient(180deg,#fff2cf 0%,#fff7e6 48%,#fff3d3 100%);
   border-right:1px solid #f0dfbd;
-  overflow:auto;
 }
 .lala-profile{
-  border-radius:24px;
-  padding:10px 8px 14px;
-  background:rgba(255,255,255,.28);
+  border-radius:24px;padding:8px 7px 12px;background:rgba(255,255,255,.28);
 }
 .pet.pet-seal{
-  height:280px;
-  padding:4px 0 0;
-  display:flex;flex-direction:column;justify-content:flex-end;align-items:center;
-  border-radius:22px;overflow:hidden;cursor:pointer;user-select:none;
-  font-size:initial;
+  height:245px;padding:2px 0 0;display:flex;flex-direction:column;
+  justify-content:flex-end;align-items:center;border-radius:22px;overflow:hidden;
+  cursor:pointer;user-select:none;font-size:initial;
 }
 .pet-bubble{
-  position:relative;
-  width:94%;
-  min-height:74px;
-  background:#fffefb;
-  border:1px solid #d9c9b9;
-  border-radius:27px;
-  padding:14px 16px;
-  font-size:14px;line-height:1.55;
-  color:#42352e;
-  box-shadow:0 4px 15px #806b5410;
-  z-index:2;
+  position:relative;width:94%;min-height:64px;background:#fffefb;
+  border:1px solid #d9c9b9;border-radius:24px;padding:11px 13px;
+  font-size:12px;line-height:1.5;color:#42352e;box-shadow:0 4px 15px #806b5410;z-index:2;
 }
 .pet-bubble:after{
-  content:"";
-  position:absolute;left:54px;bottom:-8px;
-  width:14px;height:14px;
-  background:#fffefb;
-  border-right:1px solid #d9c9b9;
-  border-bottom:1px solid #d9c9b9;
+  content:"";position:absolute;left:48px;bottom:-7px;width:12px;height:12px;
+  background:#fffefb;border-right:1px solid #d9c9b9;border-bottom:1px solid #d9c9b9;
   transform:rotate(45deg);
 }
 .pet-seal img{
-  width:230px;height:168px;object-fit:cover;
-  object-position:center;
-  margin-top:2px;border-radius:30px;
-  mix-blend-mode:multiply;
-  filter:saturate(.88) contrast(.98);
+  width:205px;height:145px;object-fit:cover;object-position:center;margin-top:2px;
+  border-radius:28px;mix-blend-mode:multiply;filter:saturate(.88) contrast(.98);
   transition:transform .18s ease;
 }
 .pet-seal:active img{transform:scale(.97) rotate(-1deg)}
-.pet-name{font-weight:850;font-size:18px;margin:4px 8px 10px}
-.pet-name span{color:#9d8879;font-size:14px}
+.pet-name{font-weight:850;font-size:17px;margin:4px 8px 9px}
+.pet-name span{color:#9d8879;font-size:13px}
 .pet-stats{
-  margin:0 4px;padding:11px 10px;
-  border-top:1px solid rgba(187,156,110,.22);
-  display:grid;gap:8px;font-size:13px
+  margin:0 4px;padding:10px 9px;border-top:1px solid rgba(187,156,110,.22);
+  display:grid;gap:7px;font-size:12px
 }
 .stat-row{display:flex;justify-content:space-between;gap:8px;align-items:center}
-.stat-hearts{color:#ff7488;letter-spacing:2px}
-.stat-fish{color:#77aee4;letter-spacing:2px}
-.brand{
-  text-align:left;font-size:23px;margin:12px 10px 24px;
-  letter-spacing:.2px;
-}
-.nav{gap:8px}
-.nav button{
-  padding:13px 16px;border-radius:16px;font-size:16px;
-  transition:.16s ease;
-}
+.stat-hearts{color:#ff7488;letter-spacing:1px}
+.stat-fish{color:#77aee4;letter-spacing:1px}
+.brand{text-align:left;font-size:21px;margin:10px 10px 18px;letter-spacing:.2px}
+.nav{gap:7px}
+.nav button{padding:12px 14px;border-radius:15px;font-size:15px}
 .nav button:hover{background:rgba(255,255,255,.55)}
-.nav button.active{
-  background:rgba(255,255,255,.9);
-  box-shadow:0 6px 18px #9f7a3c12;
-}
+.nav button.active{background:rgba(255,255,255,.9);box-shadow:0 6px 18px #9f7a3c12}
 .side-summary{
-  margin-top:auto;
-  min-height:112px;
-  border:1px solid #ecd9b8;border-radius:20px;
-  background:rgba(255,255,255,.64);
-  padding:12px 12px 7px;
-  position:relative;overflow:hidden;
-  font-size:12px;line-height:1.5;color:#65554b
+  margin-top:20px;min-height:104px;border:1px solid #ecd9b8;border-radius:18px;
+  background:rgba(255,255,255,.64);padding:11px 11px 6px;position:relative;overflow:hidden;
+  font-size:11px;line-height:1.5;color:#65554b
 }
 .side-summary img{
-  position:absolute;right:-3px;bottom:-12px;
-  width:110px;height:80px;object-fit:cover;border-radius:30px;
-  mix-blend-mode:multiply;
+  position:absolute;right:-3px;bottom:-10px;width:102px;height:74px;
+  object-fit:cover;border-radius:28px;mix-blend-mode:multiply;
 }
 #sideSummaryText{width:58%;position:relative;z-index:1}
-.foot{padding-top:10px;font-size:11px}
+.foot{padding-top:9px;font-size:10px}
 
-.main{padding:28px 34px}
-.hello{font-size:32px;letter-spacing:.2px}
-.today-date{font-size:19px;color:#7c675a}
-.quick{
-  background:#ff718a;color:#fff;
-  box-shadow:0 7px 18px #ff718a26;
-  padding:12px 20px;
-}
-.quick:hover{transform:translateY(-1px)}
+.main{padding:24px 26px;min-width:0;width:100%}
+.hello{font-size:30px;letter-spacing:.2px}
+.today-date{font-size:18px;color:#7c675a}
+.quick{background:#ff718a;color:#fff;box-shadow:0 7px 18px #ff718a26;padding:11px 18px}
 .card{
-  background:rgba(255,255,255,.84);
-  border-color:#eadfce;
-  box-shadow:0 6px 22px #876c4b0d;
+  background:rgba(255,255,255,.84);border-color:#eadfce;
+  box-shadow:0 6px 22px #876c4b0d;min-width:0;
 }
-.home{grid-template-columns:minmax(650px,1.35fr) minmax(340px,.75fr);gap:18px}
-.left,.right{gap:18px}
-.trip{
-  min-height:255px;
-  background:
-    radial-gradient(circle at 87% 22%,rgba(255,216,229,.34),transparent 23%),
-    rgba(255,255,255,.88);
+.home{
+  grid-template-columns:minmax(0,1.28fr) minmax(285px,.72fr);
+  gap:16px;width:100%;
 }
-.trip .title{font-size:21px}
-.trip .days{font-size:72px;color:var(--accent);margin-top:15px}
+.left,.right{gap:16px;min-width:0}
+.trip{min-height:235px;background:radial-gradient(circle at 87% 22%,rgba(255,216,229,.34),transparent 23%),rgba(255,255,255,.88)}
+.trip .title{font-size:20px}
+.trip .days{font-size:66px;color:var(--accent);margin-top:12px}
 .trip-art-img{
-  position:absolute;right:18px;bottom:12px;
-  width:315px;height:205px;object-fit:cover;
-  object-position:center;border-radius:26px;
-  opacity:.96;
-  mix-blend-mode:multiply;
+  position:absolute;right:14px;bottom:10px;width:min(285px,40%);height:auto;max-height:190px;
+  object-fit:cover;object-position:center;border-radius:24px;opacity:.96;mix-blend-mode:multiply;
 }
 .datein{position:relative;z-index:2}
 .datein input{background:#fff;font-weight:700}
-.title{font-size:19px}
-.cal{padding:20px}
-.calhead{margin-bottom:14px}
-.day{min-height:82px}
-.event{
-  background:#ffdce4;color:#a92345;
-  border-radius:7px;padding:4px 5px;
-}
+.title{font-size:18px}
+.cal{padding:18px}
+.day{min-height:78px}
+.event{background:#ffdce4;color:#a92345;border-radius:7px;padding:4px 5px}
 .holiday-event{background:#eaf4ff;color:#356a97}
 .leave-event{background:#e5f6e8;color:#33734a}
-.todo-card{min-height:400px}
-.todo-group-title{font-size:15px}
+.todo-card{min-height:380px}
 .tag{background:#fff0be}
-.row{padding:13px 0}
-.full-calendar-card .day{min-height:116px}
+.row{padding:12px 0}
+.full-calendar-card .day{min-height:110px}
 .idea-card,.todo-section{box-shadow:0 4px 14px #806c5108}
+.calendar-page-toolbar,.todo-toolbar,.idea-toolbar{min-width:0}
 
-@media(max-width:1200px){
-  .app{grid-template-columns:235px 1fr}
+@media(max-width:1450px){
+  .app{grid-template-columns:220px minmax(0,1fr)}
+  .main{padding:22px 20px}
+  .home{grid-template-columns:minmax(0,1.15fr) minmax(270px,.85fr)}
+  .trip-art-img{width:min(235px,38%)}
+  .pet.pet-seal{height:220px}
+  .pet-seal img{width:185px;height:132px}
+  .pet-bubble{font-size:11px;min-height:58px;padding:10px 11px}
+  .brand{font-size:19px;margin-bottom:16px}
+}
+@media(max-width:1180px){
   .home{grid-template-columns:1fr}
-  .trip-art-img{width:280px}
-  .pet.pet-seal{height:245px}
-  .pet-seal img{width:205px;height:145px}
+  .right{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .right .todo-card{grid-row:span 2}
+  .trip-art-img{width:min(270px,40%)}
+}
+@media(max-width:900px){
+  .right{grid-template-columns:1fr}
 }
 @media(max-width:700px){
-  .app{display:block}
+  html,body{overflow-x:hidden}
+  .app{display:block;width:100%}
   .side{display:none}
-  .main{padding:16px 14px 28px}
-  .trip-art-img{width:175px;height:125px;right:4px;bottom:10px}
+  .main{width:100%;min-width:0;padding:16px 14px 28px}
+  .trip-art-img{width:170px;right:3px;bottom:8px}
   .trip .days{font-size:50px}
 }
 
@@ -368,7 +329,7 @@ body{
       <div id="sideSummaryText">今天先活著就很棒了。</div>
       <img src="./lala-seal-main.png" alt="">
     </div>
-    <div class="foot">v2 · 社畜海豹值勤中 🦭</div>
+    <div class="foot">v2.1 · 社畜海豹值勤中 🦭</div>
 </aside>
 
 <main class="main">
@@ -1263,7 +1224,7 @@ document.querySelectorAll('.mobile-nav').forEach(btn=>{
 
 <script>
 
-// ===== LaLa 社畜海豹 v2 =====
+// ===== LaLa 社畜海豹 v2.1 =====
 const lalaSealLines=[
   '又要上班了嗎…咖啡先救我。',
   '待辦還在。沒關係，明天的你比較強。',
