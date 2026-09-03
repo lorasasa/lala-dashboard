@@ -159,6 +159,67 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
   .mobile-bottom-nav button.active{color:#c93650;font-weight:800}
 }
 
+
+/* ===== LaLa seal mascot v1: visual-only, stable features untouched ===== */
+.pet.pet-seal{
+  height:190px;
+  margin:-4px -4px 8px;
+  padding:10px 8px 4px;
+  border-radius:22px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-end;
+  gap:4px;
+  background:rgba(255,255,255,.46);
+  border:1px solid rgba(238,228,215,.8);
+  overflow:hidden;
+  cursor:pointer;
+  user-select:none;
+}
+.pet-seal img{
+  width:168px;
+  max-width:100%;
+  height:112px;
+  object-fit:cover;
+  object-position:center;
+  border-radius:18px;
+  mix-blend-mode:multiply;
+  filter:saturate(.9) contrast(.98);
+  transition:transform .18s ease;
+}
+.pet-seal:active img{transform:scale(.96) rotate(-1deg)}
+.pet-bubble{
+  position:relative;
+  width:100%;
+  min-height:42px;
+  padding:8px 10px;
+  border-radius:14px;
+  background:#fff;
+  border:1px solid var(--line);
+  color:#5e4b40;
+  font-size:12px;
+  line-height:1.45;
+  text-align:left;
+  box-shadow:0 2px 8px #7a60430a;
+}
+.pet-bubble:after{
+  content:"";
+  position:absolute;
+  left:34px;
+  bottom:-6px;
+  width:10px;height:10px;
+  background:#fff;
+  border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  transform:rotate(45deg);
+}
+@media(max-width:1050px){
+  .pet.pet-seal{height:175px}
+  .pet-seal img{width:142px;height:98px}
+  .pet-bubble{font-size:11px}
+}
+
 </style>
 
 <meta name="theme-color" content="#fffaf2">
@@ -171,7 +232,10 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
 <body>
 <div class="app">
 <aside class="side">
-  <div class="pet">📷</div>
+  <div class="pet pet-seal" id="lalaPet" title="LaLa 海豹">
+      <div class="pet-bubble" id="petBubble">上班了。真是個令人遺憾的消息。</div>
+      <img src="./lala-seal-idle.png" alt="LaLa 海豹">
+    </div>
   <div class="brand">LaLa 的工作台</div>
   <nav class="nav">
     <button class="nav-view active" data-view="home">🏠　首頁</button>
@@ -1069,6 +1133,32 @@ document.querySelectorAll('.mobile-nav').forEach(btn=>{
     window.scrollTo(0,0);
   });
 });
+
+
+// ===== LaLa seal mascot v1 =====
+const lalaSealLines=[
+  '上班了。真是個令人遺憾的消息。',
+  '先喝咖啡，問題晚點再長大。',
+  '待辦不會消失，但我可以先裝沒看到。',
+  '今天也要努力……維持最低限度的體面。',
+  '完成一件了。剩下的不要數，傷感情。',
+  '行事曆排這麼滿，是跟自己有仇嗎？',
+  '我不是累，我只是進入省電模式。',
+  '下班時間到了。工作沒有做完，但人生也沒有。',
+  '會議又來了。好的，我們一起假裝很期待。',
+  '沒事，我們還有明天。明天的我們真可憐。'
+];
+function lalaSealTalk(){
+  const bubble=document.getElementById('petBubble');
+  if(!bubble)return;
+  let next=lalaSealLines[Math.floor(Math.random()*lalaSealLines.length)];
+  if(next===bubble.textContent && lalaSealLines.length>1){
+    next=lalaSealLines[(lalaSealLines.indexOf(next)+1)%lalaSealLines.length];
+  }
+  bubble.textContent=next;
+}
+const lalaPet=document.getElementById('lalaPet');
+if(lalaPet)lalaPet.addEventListener('click',lalaSealTalk);
 
 </script>
 
