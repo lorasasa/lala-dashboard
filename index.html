@@ -385,6 +385,7 @@ const TODO_API='https://lala-notion-api.lorasasa.workers.dev/todos';
 const EVENT_API='https://lala-notion-api.lorasasa.workers.dev/events';
 const IDEA_API='https://lala-notion-api.lorasasa.workers.dev/ideas';
 const HOLIDAY_API='https://lala-notion-api.lorasasa.workers.dev/holidays';
+const PUSH_BASE='https://lala-notion-api.lorasasa.workers.dev';
 let holidays=[];
 const DASHBOARD_KEY_STORAGE='lala_dashboard_api_key';
 let todoFilter='all';
@@ -1004,8 +1005,61 @@ loadTodosFromNotion();
 loadIdeasFromNotion();
 
 
-async function updateNotificationButton(){const b=$('notificationEnable');if(!b)return;if(!('Notification'in window)||!('serviceWorker'in navigator)){b.textContent='🔕 不支援通知';b.disabled=true;return;}b.textContent=Notification.permission==='granted'?'🔔 通知已開啟':Notification.permission==='denied'?'🔕 通知已被拒絕':'🔔 開啟通知';}
-$('notificationEnable').onclick=async()=>{try{const p=await Notification.requestPermission();await updateNotificationButton();if(p!=='granted')return;const r=await navigator.serviceWorker.ready;r.active?.postMessage({type:'LALA_TEST_NOTIFICATION'});}catch(e){alert('開啟通知失敗：'+e.message);}};
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(base64);
+  return Uint8Array.from([...raw].map(ch=>ch.charCodeAt(0)));
+}
+async function pushApi(path,options={}){
+  const key=getDashboardApiKey(); if(!key)throw new Error('尚未輸入 API Key');
+  const response=await fetch(PUSH_BASE+path,{...options,headers:{'X-Dashboard-Key':key,'Content-Type':'application/json',...(options.headers||{})}});
+  let data={}; try{data=await response.json()}catch(e){}
+  if(response.status===401){localStorage.removeItem(DASHBOARD_KEY_STORAGE);throw new Error('API Key 驗證失敗，請重新輸入');}
+  if(!response.ok||data.success===false)throw new Error(data?.error||`Push 設定失敗 (${response.status})`);
+  return data;
+}
+async function ensurePushSubscription(){
+  const registration=await navigator.serviceWorker.ready;
+  let subscription=await registration.pushManager.getSubscription();
+  if(!subscription){
+    const keyData=await pushApi('/push-public-key',{method:'GET'});
+    subscription=await registration.pushManager.subscribe({
+      userVisibleOnly:true,
+      applicationServerKey:urlBase64ToUint8Array(keyData.publicKey)
+    });
+  }
+  await pushApi('/push-subscribe',{method:'POST',body:JSON.stringify({subscription:subscription.toJSON()})});
+  return subscription;
+}
+async function updateNotificationButton(){
+  const b=$('notificationEnable');if(!b)return;
+  if(!('Notification'in window)||!('serviceWorker'in navigator)||!('PushManager'in window)){
+    b.textContent='🔕 不支援通知';b.disabled=true;return;
+  }
+  if(Notification.permission==='denied'){b.textContent='🔕 通知已被拒絕';return;}
+  if(Notification.permission!=='granted'){b.textContent='🔔 開啟通知';return;}
+  try{
+    const r=await navigator.serviceWorker.ready;
+    const s=await r.pushManager.getSubscription();
+    b.textContent=s?'🔔 推播已開啟':'🔔 完成推播設定';
+  }catch(e){b.textContent='🔔 完成推播設定';}
+}
+$('notificationEnable').onclick=async()=>{
+  try{
+    const p=Notification.permission==='granted'?'granted':await Notification.requestPermission();
+    if(p!=='granted'){await updateNotificationButton();return;}
+    const b=$('notificationEnable');if(b){b.disabled=true;b.textContent='🔔 設定推播中…';}
+    await ensurePushSubscription();
+    if(b)b.disabled=false;
+    await updateNotificationButton();
+    alert('LaLa 推播訂閱完成 ✨');
+  }catch(e){
+    const b=$('notificationEnable');if(b)b.disabled=false;
+    await updateNotificationButton();
+    alert('開啟推播失敗：'+e.message);
+  }
+};
 updateNotificationButton();
 
 document.querySelectorAll('.mobile-nav').forEach(btn=>{
