@@ -160,64 +160,178 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
 }
 
 
-/* ===== LaLa seal mascot v1: visual-only, stable features untouched ===== */
+/* ===== LaLa Dashboard visual v2 · reference-style ===== */
+:root{
+  --bg:#fffaf3;
+  --side:#fff4d7;
+  --card:#fffefa;
+  --line:#eadfce;
+  --text:#382d27;
+  --muted:#8b796d;
+  --accent:#ff5d78;
+  --blue:#8dbcf1;
+}
+body{
+  background:
+    radial-gradient(circle at 90% 5%,rgba(255,215,224,.28),transparent 24%),
+    radial-gradient(circle at 4% 90%,rgba(255,230,173,.22),transparent 28%),
+    var(--bg);
+}
+.app{grid-template-columns:270px 1fr}
+.side{
+  position:sticky;top:0;height:100vh;
+  padding:20px 16px 14px;
+  background:linear-gradient(180deg,#fff2cf 0%,#fff7e6 48%,#fff3d3 100%);
+  border-right:1px solid #f0dfbd;
+  overflow:auto;
+}
+.lala-profile{
+  border-radius:24px;
+  padding:10px 8px 14px;
+  background:rgba(255,255,255,.28);
+}
 .pet.pet-seal{
-  height:190px;
-  margin:-4px -4px 8px;
-  padding:10px 8px 4px;
-  border-radius:22px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-end;
-  gap:4px;
-  background:rgba(255,255,255,.46);
-  border:1px solid rgba(238,228,215,.8);
-  overflow:hidden;
-  cursor:pointer;
-  user-select:none;
+  height:280px;
+  padding:4px 0 0;
+  display:flex;flex-direction:column;justify-content:flex-end;align-items:center;
+  border-radius:22px;overflow:hidden;cursor:pointer;user-select:none;
+  font-size:initial;
 }
-.pet-seal img{
-  width:168px;
-  max-width:100%;
-  height:112px;
-  object-fit:cover;
-  object-position:center;
-  border-radius:18px;
-  mix-blend-mode:multiply;
-  filter:saturate(.9) contrast(.98);
-  transition:transform .18s ease;
-}
-.pet-seal:active img{transform:scale(.96) rotate(-1deg)}
 .pet-bubble{
   position:relative;
-  width:100%;
-  min-height:42px;
-  padding:8px 10px;
-  border-radius:14px;
-  background:#fff;
-  border:1px solid var(--line);
-  color:#5e4b40;
-  font-size:12px;
-  line-height:1.45;
-  text-align:left;
-  box-shadow:0 2px 8px #7a60430a;
+  width:94%;
+  min-height:74px;
+  background:#fffefb;
+  border:1px solid #d9c9b9;
+  border-radius:27px;
+  padding:14px 16px;
+  font-size:14px;line-height:1.55;
+  color:#42352e;
+  box-shadow:0 4px 15px #806b5410;
+  z-index:2;
 }
 .pet-bubble:after{
   content:"";
-  position:absolute;
-  left:34px;
-  bottom:-6px;
-  width:10px;height:10px;
-  background:#fff;
-  border-right:1px solid var(--line);
-  border-bottom:1px solid var(--line);
+  position:absolute;left:54px;bottom:-8px;
+  width:14px;height:14px;
+  background:#fffefb;
+  border-right:1px solid #d9c9b9;
+  border-bottom:1px solid #d9c9b9;
   transform:rotate(45deg);
 }
-@media(max-width:1050px){
-  .pet.pet-seal{height:175px}
-  .pet-seal img{width:142px;height:98px}
-  .pet-bubble{font-size:11px}
+.pet-seal img{
+  width:230px;height:168px;object-fit:cover;
+  object-position:center;
+  margin-top:2px;border-radius:30px;
+  mix-blend-mode:multiply;
+  filter:saturate(.88) contrast(.98);
+  transition:transform .18s ease;
+}
+.pet-seal:active img{transform:scale(.97) rotate(-1deg)}
+.pet-name{font-weight:850;font-size:18px;margin:4px 8px 10px}
+.pet-name span{color:#9d8879;font-size:14px}
+.pet-stats{
+  margin:0 4px;padding:11px 10px;
+  border-top:1px solid rgba(187,156,110,.22);
+  display:grid;gap:8px;font-size:13px
+}
+.stat-row{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.stat-hearts{color:#ff7488;letter-spacing:2px}
+.stat-fish{color:#77aee4;letter-spacing:2px}
+.brand{
+  text-align:left;font-size:23px;margin:12px 10px 24px;
+  letter-spacing:.2px;
+}
+.nav{gap:8px}
+.nav button{
+  padding:13px 16px;border-radius:16px;font-size:16px;
+  transition:.16s ease;
+}
+.nav button:hover{background:rgba(255,255,255,.55)}
+.nav button.active{
+  background:rgba(255,255,255,.9);
+  box-shadow:0 6px 18px #9f7a3c12;
+}
+.side-summary{
+  margin-top:auto;
+  min-height:112px;
+  border:1px solid #ecd9b8;border-radius:20px;
+  background:rgba(255,255,255,.64);
+  padding:12px 12px 7px;
+  position:relative;overflow:hidden;
+  font-size:12px;line-height:1.5;color:#65554b
+}
+.side-summary img{
+  position:absolute;right:-3px;bottom:-12px;
+  width:110px;height:80px;object-fit:cover;border-radius:30px;
+  mix-blend-mode:multiply;
+}
+#sideSummaryText{width:58%;position:relative;z-index:1}
+.foot{padding-top:10px;font-size:11px}
+
+.main{padding:28px 34px}
+.hello{font-size:32px;letter-spacing:.2px}
+.today-date{font-size:19px;color:#7c675a}
+.quick{
+  background:#ff718a;color:#fff;
+  box-shadow:0 7px 18px #ff718a26;
+  padding:12px 20px;
+}
+.quick:hover{transform:translateY(-1px)}
+.card{
+  background:rgba(255,255,255,.84);
+  border-color:#eadfce;
+  box-shadow:0 6px 22px #876c4b0d;
+}
+.home{grid-template-columns:minmax(650px,1.35fr) minmax(340px,.75fr);gap:18px}
+.left,.right{gap:18px}
+.trip{
+  min-height:255px;
+  background:
+    radial-gradient(circle at 87% 22%,rgba(255,216,229,.34),transparent 23%),
+    rgba(255,255,255,.88);
+}
+.trip .title{font-size:21px}
+.trip .days{font-size:72px;color:var(--accent);margin-top:15px}
+.trip-art-img{
+  position:absolute;right:18px;bottom:12px;
+  width:315px;height:205px;object-fit:cover;
+  object-position:center;border-radius:26px;
+  opacity:.96;
+  mix-blend-mode:multiply;
+}
+.datein{position:relative;z-index:2}
+.datein input{background:#fff;font-weight:700}
+.title{font-size:19px}
+.cal{padding:20px}
+.calhead{margin-bottom:14px}
+.day{min-height:82px}
+.event{
+  background:#ffdce4;color:#a92345;
+  border-radius:7px;padding:4px 5px;
+}
+.holiday-event{background:#eaf4ff;color:#356a97}
+.leave-event{background:#e5f6e8;color:#33734a}
+.todo-card{min-height:400px}
+.todo-group-title{font-size:15px}
+.tag{background:#fff0be}
+.row{padding:13px 0}
+.full-calendar-card .day{min-height:116px}
+.idea-card,.todo-section{box-shadow:0 4px 14px #806c5108}
+
+@media(max-width:1200px){
+  .app{grid-template-columns:235px 1fr}
+  .home{grid-template-columns:1fr}
+  .trip-art-img{width:280px}
+  .pet.pet-seal{height:245px}
+  .pet-seal img{width:205px;height:145px}
+}
+@media(max-width:700px){
+  .app{display:block}
+  .side{display:none}
+  .main{padding:16px 14px 28px}
+  .trip-art-img{width:175px;height:125px;right:4px;bottom:10px}
+  .trip .days{font-size:50px}
 }
 
 </style>
@@ -232,10 +346,17 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
 <body>
 <div class="app">
 <aside class="side">
-  <div class="pet pet-seal" id="lalaPet" title="LaLa 海豹">
-      <div class="pet-bubble" id="petBubble">上班了。真是個令人遺憾的消息。</div>
-      <img src="./lala-seal-idle.png" alt="LaLa 海豹">
+  <div class="lala-profile">
+    <div class="pet pet-seal" id="lalaPet" title="點我聽海豹碎念">
+      <div class="pet-bubble" id="petBubble">又要上班了嗎…咖啡先救我。</div>
+      <img src="./lala-seal-main.png" alt="LaLa 海豹">
     </div>
+    <div class="pet-name">LaLa 海豹 <span title="社畜同事">✎</span></div>
+    <div class="pet-stats">
+      <div class="stat-row"><span>❤️ 心情值</span><span class="stat-hearts">♥ ♥ ♥ ♥ ♡</span></div>
+      <div class="stat-row"><span>🐟 飽腹值</span><span class="stat-fish">● ● ● ○ ○</span></div>
+    </div>
+  </div>
   <div class="brand">LaLa 的工作台</div>
   <nav class="nav">
     <button class="nav-view active" data-view="home">🏠　首頁</button>
@@ -243,7 +364,11 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
     <button class="nav-view" data-view="todo-page">✅　待辦清單</button>
     <button class="nav-view" data-view="ideas-page">💡　腦海中的小靈感</button>
   </nav>
-  <div class="foot">💗 好好生活，慢慢實現 ✨</div>
+  <div class="side-summary">
+      <div id="sideSummaryText">今天先活著就很棒了。</div>
+      <img src="./lala-seal-main.png" alt="">
+    </div>
+    <div class="foot">v2 · 社畜海豹值勤中 🦭</div>
 </aside>
 
 <main class="main">
@@ -262,7 +387,7 @@ body{margin:0;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;backgro
         <div class="title">🇯🇵 東京旅行倒數</div>
         <div class="days"><span id="days">--</span> <span>DAYS TO GO</span></div>
         <div class="datein"><span class="muted">出發日　</span><input type="date" id="tripDate"></div>
-        <div class="trip-art">🗼🌸</div>
+        <img class="trip-art-img" src="./lala-trip-art.png" alt="東京旅行海豹">
       </div>
 
       <div class="card cal">
@@ -1134,34 +1259,43 @@ document.querySelectorAll('.mobile-nav').forEach(btn=>{
   });
 });
 
+</script>
 
-// ===== LaLa seal mascot v1 =====
+<script>
+
+// ===== LaLa 社畜海豹 v2 =====
 const lalaSealLines=[
-  '上班了。真是個令人遺憾的消息。',
-  '先喝咖啡，問題晚點再長大。',
-  '待辦不會消失，但我可以先裝沒看到。',
-  '今天也要努力……維持最低限度的體面。',
-  '完成一件了。剩下的不要數，傷感情。',
+  '又要上班了嗎…咖啡先救我。',
+  '待辦還在。沒關係，明天的你比較強。',
   '行事曆排這麼滿，是跟自己有仇嗎？',
+  '完成一件了。剩下的不要數，傷感情。',
   '我不是累，我只是進入省電模式。',
-  '下班時間到了。工作沒有做完，但人生也沒有。',
+  '先喝咖啡，問題晚點再長大。',
   '會議又來了。好的，我們一起假裝很期待。',
+  '下班時間到了。工作沒有做完，但人生也沒有。',
+  '今天也要努力……維持最低限度的體面。',
   '沒事，我們還有明天。明天的我們真可憐。'
 ];
 function lalaSealTalk(){
-  const bubble=document.getElementById('petBubble');
-  if(!bubble)return;
-  let next=lalaSealLines[Math.floor(Math.random()*lalaSealLines.length)];
-  if(next===bubble.textContent && lalaSealLines.length>1){
-    next=lalaSealLines[(lalaSealLines.indexOf(next)+1)%lalaSealLines.length];
-  }
-  bubble.textContent=next;
+  const bubble=$('petBubble'); if(!bubble)return;
+  let line=lalaSealLines[Math.floor(Math.random()*lalaSealLines.length)];
+  if(line===bubble.textContent) line=lalaSealLines[(lalaSealLines.indexOf(line)+1)%lalaSealLines.length];
+  bubble.textContent=line;
 }
-const lalaPet=document.getElementById('lalaPet');
-if(lalaPet)lalaPet.addEventListener('click',lalaSealTalk);
+function renderSideSummary(){
+  const box=$('sideSummaryText'); if(!box)return;
+  const today=ds(new Date());
+  const todayEvents=events.filter(e=>eventDatePart(e.date)===today).length;
+  const openTodos=todoItems.filter(t=>!t.done).length;
+  box.innerHTML=`今天有 <b>${todayEvents}</b> 個行程<br><b>${openTodos}</b> 個待辦項目。<br><span style="color:#c65b72">做不完的事…明天再說吧。</span>`;
+}
+const lalaPet=$('lalaPet');
+if(lalaPet) lalaPet.addEventListener('click',lalaSealTalk);
+const _renderAll=renderAll;
+renderAll=function(){_renderAll();renderSideSummary();};
+setTimeout(renderSideSummary,0);
 
 </script>
-
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
