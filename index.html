@@ -339,6 +339,42 @@ body{
 }
 .event.todo-calendar-event::before{content:"☐ "}
 
+
+/* ===== v2.6 待辦拖拉 + 詳細內容 ===== */
+.event.todo-calendar-event{
+  cursor:grab !important;
+}
+.event.todo-calendar-event:active{
+  cursor:grabbing !important;
+}
+.todo-detail-grid{
+  display:grid;
+  grid-template-columns:96px 1fr;
+  gap:10px 14px;
+  margin-top:10px;
+  align-items:start;
+}
+.todo-detail-label{
+  color:var(--muted);
+  font-size:13px;
+  font-weight:700;
+}
+.todo-detail-value{
+  font-size:14px;
+  line-height:1.6;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+.todo-detail-status{
+  display:inline-block;
+  padding:4px 9px;
+  border-radius:999px;
+  background:#fff0b8;
+  color:#755b18;
+  font-size:12px;
+  font-weight:800;
+}
+
 </style>
 
 <meta name="theme-color" content="#fffaf2">
@@ -534,6 +570,32 @@ body{
   </div>
 </div>
 
+
+<div class="modal" id="todoDetailModal">
+  <div class="box">
+    <div class="title">☑️ 待辦詳細內容</div>
+    <div class="todo-detail-grid">
+      <div class="todo-detail-label">待辦事項</div>
+      <div class="todo-detail-value" id="todoDetailName"></div>
+
+      <div class="todo-detail-label">類別</div>
+      <div class="todo-detail-value" id="todoDetailCategory"></div>
+
+      <div class="todo-detail-label">到期日</div>
+      <div class="todo-detail-value" id="todoDetailDue"></div>
+
+      <div class="todo-detail-label">狀態</div>
+      <div class="todo-detail-value"><span class="todo-detail-status" id="todoDetailStatus"></span></div>
+
+      <div class="todo-detail-label">備註</div>
+      <div class="todo-detail-value" id="todoDetailNote"></div>
+    </div>
+    <div class="actions">
+      <button id="todoDetailClose">關閉</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="modal">
   <div class="box">
     <div class="title">➕ 快速新增行程</div>
@@ -680,6 +742,62 @@ function renderCountdown(){
   $('days').textContent=Math.max(0,Math.ceil((b-a)/86400000));
 }
 
+
+let viewingTodoId=null;
+
+function todoCategoryLabel(category){
+  return ({
+    '孩子':'👦 孩子',
+    '工作':'💼 工作',
+    '家庭':'🏠 家庭',
+    '個人':'👤 個人'
+  })[category]||category||'未分類';
+}
+
+function openTodoDetail(id){
+  const item=todoItems.find(t=>t.id===id);
+  if(!item)return;
+  viewingTodoId=id;
+  $('todoDetailName').textContent=item.name||'';
+  $('todoDetailCategory').textContent=todoCategoryLabel(item.category);
+  $('todoDetailDue').textContent=item.dueDate||'未設定';
+  $('todoDetailStatus').textContent=item.done?'已完成':'尚未完成';
+  $('todoDetailNote').textContent=item.note||'沒有備註';
+  $('todoDetailModal').classList.add('show');
+}
+
+function closeTodoDetail(){
+  viewingTodoId=null;
+  $('todoDetailModal').classList.remove('show');
+}
+
+async function moveTodoToDate(id,newDate){
+  const item=todoItems.find(t=>t.id===id);
+  if(!item || item.dueDate===newDate)return;
+  const previous=item.dueDate;
+  item.dueDate=newDate;
+  persistTodos();
+  renderTodoPage();
+  renderSide();
+  renderCalendar();
+  renderFullCalendar();
+  setTodoSyncStatus('☁️ 正在同步 Notion…');
+  try{
+    await updateTodoInNotion(item);
+    setTodoSyncStatus('☁️ Notion 已同步');
+  }catch(error){
+    item.dueDate=previous;
+    persistTodos();
+    renderTodoPage();
+    renderSide();
+    renderCalendar();
+    renderFullCalendar();
+    setTodoSyncStatus('⚠️ 同步失敗');
+    alert(error.message);
+  }
+}
+
+
 function appendTodosToCalendarDay(el,key){
   todoItems
     .filter(t=>!t.done && t.dueDate && String(t.dueDate).slice(0,10)===key)
@@ -688,6 +806,14 @@ function appendTodosToCalendarDay(el,key){
       item.className='event todo-calendar-event';
       item.textContent=t.name;
       item.title=`待辦｜${t.category}${t.note?`｜${t.note}`:''}`;
+      item.draggable=true;
+      item.ondragstart=ev=>{
+        ev.dataTransfer.setData('text/plain',`todo:${t.id}`);
+      };
+      item.onclick=ev=>{
+        ev.stopPropagation();
+        openTodoDetail(t.id);
+      };
       el.appendChild(item);
     });
 }
@@ -736,7 +862,13 @@ function renderCalendar(){
 
     el.ondragover=e=>e.preventDefault();
     el.ondrop=e=>{
-      const id=e.dataTransfer.getData('text/plain');
+      const raw=e.dataTransfer.getData('text/plain');
+      if(raw.startsWith('todo:')){
+        const todoId=raw.slice(5);
+        if(todoItems.find(t=>t.id===todoId))moveTodoToDate(todoId,key);
+        return;
+      }
+      const id=raw;
       const item=events.find(x=>x.id===id);
       if(item)moveEventToDate(id,key)
     };
@@ -825,7 +957,13 @@ function renderFullCalendar(){
 
     el.ondragover=e=>e.preventDefault();
     el.ondrop=e=>{
-      const id=e.dataTransfer.getData('text/plain');
+      const raw=e.dataTransfer.getData('text/plain');
+      if(raw.startsWith('todo:')){
+        const todoId=raw.slice(5);
+        if(todoItems.find(t=>t.id===todoId))moveTodoToDate(todoId,key);
+        return;
+      }
+      const id=raw;
       const item=events.find(x=>x.id===id);
       if(item)moveEventToDate(id,key)
     };
@@ -1146,6 +1284,8 @@ $('todoQuick').onclick=()=>{
   $('todoModal').classList.add('show');
 };
 $('todoCancel').onclick=()=>$('todoModal').classList.remove('show');
+$('todoDetailClose').onclick=()=>closeTodoDetail();
+$('todoDetailModal').onclick=e=>{if(e.target===$('todoDetailModal'))closeTodoDetail();};
 $('todoSave').onclick=async()=>{
   const name=$('todoName').value.trim(); if(!name)return;
   const item={id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString()),name,category:$('todoCategory').value,dueDate:$('todoDue').value,note:$('todoNote').value.trim(),done:false};
