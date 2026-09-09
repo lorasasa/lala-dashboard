@@ -331,6 +331,14 @@ body{
   .pet-seal img{height:175px}
 }
 
+
+/* ===== v2.5 待辦顯示於行事曆 ===== */
+.event.todo-calendar-event{
+  background:#fff0b8 !important;color:#755b18 !important;
+  border:1px solid #f3df91;cursor:default;
+}
+.event.todo-calendar-event::before{content:"☐ "}
+
 </style>
 
 <meta name="theme-color" content="#fffaf2">
@@ -671,6 +679,19 @@ function renderCountdown(){
   const b=new Date(saved+'T00:00:00');
   $('days').textContent=Math.max(0,Math.ceil((b-a)/86400000));
 }
+
+function appendTodosToCalendarDay(el,key){
+  todoItems
+    .filter(t=>!t.done && t.dueDate && String(t.dueDate).slice(0,10)===key)
+    .forEach(t=>{
+      const item=document.createElement('div');
+      item.className='event todo-calendar-event';
+      item.textContent=t.name;
+      item.title=`待辦｜${t.category}${t.note?`｜${t.note}`:''}`;
+      el.appendChild(item);
+    });
+}
+
 function renderCalendar(){
   const calendar=$('calendar');
   calendar.innerHTML='';
@@ -710,6 +731,8 @@ function renderCalendar(){
       item.onclick=ev=>{ev.stopPropagation();openEventEditor(e.id);};
       el.appendChild(item);
     });
+
+    appendTodosToCalendarDay(el,key);
 
     el.ondragover=e=>e.preventDefault();
     el.ondrop=e=>{
@@ -753,7 +776,7 @@ function renderSide(){
   $('todos').querySelectorAll('.home-todo-check').forEach(cb=>{
     cb.onchange=async()=>{
       const item=todoItems.find(t=>t.id===cb.dataset.id);
-      if(item){const previous=item.done;item.done=true;persistTodos();renderSide();renderTodoPage();setTodoSyncStatus('☁️ 正在同步 Notion…');try{await updateTodoInNotion(item);setTodoSyncStatus('☁️ Notion 已同步');}catch(error){item.done=previous;persistTodos();renderSide();renderTodoPage();setTodoSyncStatus('⚠️ 同步失敗');alert(error.message);}}
+      if(item){const previous=item.done;item.done=true;persistTodos();renderSide();renderTodoPage();renderCalendar();renderFullCalendar();setTodoSyncStatus('☁️ 正在同步 Notion…');try{await updateTodoInNotion(item);setTodoSyncStatus('☁️ Notion 已同步');}catch(error){item.done=previous;persistTodos();renderSide();renderTodoPage();renderCalendar();renderFullCalendar();setTodoSyncStatus('⚠️ 同步失敗');alert(error.message);}}
     };
   });
 }
@@ -798,6 +821,8 @@ function renderFullCalendar(){
       item.onclick=ev=>{ev.stopPropagation();openEventEditor(e.id);};
       el.appendChild(item);
     });
+    appendTodosToCalendarDay(el,key);
+
     el.ondragover=e=>e.preventDefault();
     el.ondrop=e=>{
       const id=e.dataTransfer.getData('text/plain');
@@ -851,7 +876,7 @@ function normalizeCloudTodo(t){
 }
 async function loadTodosFromNotion(){
   setTodoSyncStatus('☁️ 正在同步 Notion…');
-  try{const data=await todoApi('',{method:'GET'});todoItems=(data.todos||[]).map(normalizeCloudTodo);persistTodos();renderTodoPage();renderSide();setTodoSyncStatus('☁️ Notion 已同步');}
+  try{const data=await todoApi('',{method:'GET'});todoItems=(data.todos||[]).map(normalizeCloudTodo);persistTodos();renderTodoPage();renderSide();renderCalendar();renderFullCalendar();setTodoSyncStatus('☁️ Notion 已同步');}
   catch(error){console.error(error);setTodoSyncStatus('⚠️ 使用本機待辦');}
 }
 async function createTodoInNotion(item){
@@ -918,7 +943,7 @@ function renderTodoPage(){
     const id=row.dataset.id;
     row.querySelector('.todo-check').onchange=async e=>{
       const item=todoItems.find(t=>t.id===id);
-      if(item){const previous=item.done;item.done=e.target.checked;persistTodos();renderTodoPage();renderSide();setTodoSyncStatus('☁️ 正在同步 Notion…');try{await updateTodoInNotion(item);setTodoSyncStatus('☁️ Notion 已同步');}catch(error){item.done=previous;persistTodos();renderTodoPage();renderSide();setTodoSyncStatus('⚠️ 同步失敗');alert(error.message);}}
+      if(item){const previous=item.done;item.done=e.target.checked;persistTodos();renderTodoPage();renderSide();renderCalendar();renderFullCalendar();setTodoSyncStatus('☁️ 正在同步 Notion…');try{await updateTodoInNotion(item);setTodoSyncStatus('☁️ Notion 已同步');}catch(error){item.done=previous;persistTodos();renderTodoPage();renderSide();renderCalendar();renderFullCalendar();setTodoSyncStatus('⚠️ 同步失敗');alert(error.message);}}
     };
     row.querySelector('.todo-delete').onclick=async()=>{
       const item=todoItems.find(t=>t.id===id);
@@ -1125,7 +1150,7 @@ $('todoSave').onclick=async()=>{
   const name=$('todoName').value.trim(); if(!name)return;
   const item={id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString()),name,category:$('todoCategory').value,dueDate:$('todoDue').value,note:$('todoNote').value.trim(),done:false};
   $('todoModal').classList.remove('show'); setTodoSyncStatus('☁️ 正在同步 Notion…');
-  try{item.id=await createTodoInNotion(item);todoItems.push(item);persistTodos();renderTodoPage();renderSide();setTodoSyncStatus('☁️ Notion 已同步');}
+  try{item.id=await createTodoInNotion(item);todoItems.push(item);persistTodos();renderTodoPage();renderSide();renderCalendar();renderFullCalendar();setTodoSyncStatus('☁️ Notion 已同步');}
   catch(error){console.error(error);setTodoSyncStatus('⚠️ 新增失敗');alert(error.message);}
 };
 
